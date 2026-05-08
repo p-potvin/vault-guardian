@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/VaultGuardian.Core/VaultGuardian.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/VaultGuardian.Core.Tests/VaultGuardian.Core.Tests.csproj" />
+  </Folder>
+</Solution>

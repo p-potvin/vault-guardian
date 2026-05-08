@@ -3,6 +3,12 @@
 Vault Guardian is a Windows-focused project to monitor outbound (egress) traffic
 for selected apps/services and let users block suspicious communication.
 
+## Chosen direction
+
+- **UI:** WinUI 3
+- **Packet/control engine:** WFP first, with WinDivert as a pragmatic fallback
+  for interception workflows when needed.
+
 ## Feasibility research summary
 
 Building this on Windows is possible. The main options are:
@@ -27,6 +33,19 @@ Building this on Windows is possible. The main options are:
 - An **Electron app** is also possible, but still needs a privileged Windows
   native component (service/helper) for real filtering.
 
+### Can we block specific requests, or only all-or-nothing?
+
+It is **not all-or-nothing**. With WFP (and with WinDivert filtering logic), you
+can block selectively using conditions like:
+
+- process/service identity
+- destination IP/port
+- protocol and direction
+
+Important nuance: this gives fine-grained control of **connections/flows/packets**.
+For HTTPS, blocking a specific URL path requires TLS interception (MITM), which is
+not part of this MVP.
+
 ## Proposed architecture (minimal-risk path)
 
 1. **UI layer (WinUI 3 or Electron)**  
@@ -45,3 +64,12 @@ Building this on Windows is possible. The main options are:
 - Show recent egress endpoints per selected process.
 - One-click block/unblock via Windows Firewall rule management.
 - Persist local policy and auditing logs.
+
+## Initial implementation in this repository
+
+The first code baseline is now in place:
+
+- `src/VaultGuardian.Core`: rule model + decision engine for selective egress
+  blocking logic
+- `tests/VaultGuardian.Core.Tests`: unit tests showing selective blocking (specific
+  process + destination) versus default allow behavior
