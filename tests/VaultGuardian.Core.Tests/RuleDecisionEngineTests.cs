@@ -13,6 +13,7 @@ public class RuleDecisionEngineTests
         var observation = new TrafficObservation(
             ProcessName: "app",
             ProcessPath: @"C:\Apps\app.exe",
+            RemoteHost: null,
             RemoteAddress: "198.51.100.4",
             RemotePort: 443,
             Protocol: TrafficProtocol.Tcp);
@@ -39,6 +40,7 @@ public class RuleDecisionEngineTests
         var blockedObservation = new TrafficObservation(
             ProcessName: "target",
             ProcessPath: @"C:\Apps\target.exe",
+            RemoteHost: "api.vendor.test",
             RemoteAddress: "203.0.113.10",
             RemotePort: 443,
             Protocol: TrafficProtocol.Tcp);
@@ -46,6 +48,7 @@ public class RuleDecisionEngineTests
         var allowedForOtherDestination = new TrafficObservation(
             ProcessName: "target",
             ProcessPath: @"C:\Apps\target.exe",
+            RemoteHost: "cdn.vendor.test",
             RemoteAddress: "198.51.100.4",
             RemotePort: 443,
             Protocol: TrafficProtocol.Tcp);
@@ -53,6 +56,7 @@ public class RuleDecisionEngineTests
         var allowedForOtherProcess = new TrafficObservation(
             ProcessName: "other",
             ProcessPath: @"C:\Apps\other.exe",
+            RemoteHost: "api.vendor.test",
             RemoteAddress: "203.0.113.10",
             RemotePort: 443,
             Protocol: TrafficProtocol.Tcp);
@@ -65,5 +69,37 @@ public class RuleDecisionEngineTests
         Assert.Equal("block-vendor-endpoint", blockedResult.MatchedRuleName);
         Assert.Equal(DecisionAction.Allow, destinationAllowedResult.Action);
         Assert.Equal(DecisionAction.Allow, processAllowedResult.Action);
+    }
+
+    [Fact]
+    public void Evaluate_ShouldBlockByHostname_WhenHostnameMetadataIsPresent()
+    {
+        var engine = new RuleDecisionEngine(
+        [
+            new EgressRule(
+                Name: "block-login-endpoint-host",
+                ProcessPath: @"C:\Apps\target.exe",
+                RemoteHost: "login.vendor.test",
+                Protocol: TrafficProtocol.Tcp)
+        ]);
+
+        var blockedByHost = new TrafficObservation(
+            ProcessName: "target",
+            ProcessPath: @"C:\Apps\target.exe",
+            RemoteHost: "login.vendor.test",
+            RemoteAddress: "203.0.113.10",
+            RemotePort: 443,
+            Protocol: TrafficProtocol.Tcp);
+
+        var allowedDifferentHost = new TrafficObservation(
+            ProcessName: "target",
+            ProcessPath: @"C:\Apps\target.exe",
+            RemoteHost: "api.vendor.test",
+            RemoteAddress: "203.0.113.10",
+            RemotePort: 443,
+            Protocol: TrafficProtocol.Tcp);
+
+        Assert.Equal(DecisionAction.Block, engine.Evaluate(blockedByHost).Action);
+        Assert.Equal(DecisionAction.Allow, engine.Evaluate(allowedDifferentHost).Action);
     }
 }

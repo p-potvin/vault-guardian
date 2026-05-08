@@ -16,6 +16,7 @@ public enum DecisionAction
 public sealed record TrafficObservation(
     string ProcessName,
     string ProcessPath,
+    string? RemoteHost,
     string RemoteAddress,
     int RemotePort,
     TrafficProtocol Protocol);
@@ -23,6 +24,7 @@ public sealed record TrafficObservation(
 public sealed record EgressRule(
     string Name,
     string? ProcessPath = null,
+    string? RemoteHost = null,
     string? RemoteAddress = null,
     int? RemotePort = null,
     TrafficProtocol Protocol = TrafficProtocol.Any,
@@ -38,6 +40,12 @@ public sealed record EgressRule(
 
         if (!string.IsNullOrWhiteSpace(RemoteAddress) &&
             !string.Equals(RemoteAddress, observation.RemoteAddress, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (!string.IsNullOrWhiteSpace(RemoteHost) &&
+            !string.Equals(RemoteHost, observation.RemoteHost, StringComparison.OrdinalIgnoreCase))
         {
             return false;
         }

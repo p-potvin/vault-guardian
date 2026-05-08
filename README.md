@@ -46,6 +46,23 @@ Important nuance: this gives fine-grained control of **connections/flows/packets
 For HTTPS, blocking a specific URL path requires TLS interception (MITM), which is
 not part of this MVP.
 
+### HTTPS MITM without trusted cert: possible?
+
+Short answer: **no** (for normal secure clients).
+
+To inspect HTTPS payload/URL path, a MITM proxy must terminate TLS and present a
+certificate the client trusts. Without a trusted CA (OS or app trust store), the
+TLS handshake fails or is warned/rejected. Some apps also use certificate
+pinning, which can block MITM even when a local CA is trusted.
+
+For this project's non-MITM path, policy should use metadata we can observe
+without decrypting payloads, such as:
+
+- process/service identity
+- remote IP and port
+- protocol and direction
+- hostname metadata when available (for example from DNS/SNI correlation)
+
 ## Proposed architecture (minimal-risk path)
 
 1. **UI layer (WinUI 3 or Electron)**  
@@ -70,6 +87,16 @@ not part of this MVP.
 The first code baseline is now in place:
 
 - `src/VaultGuardian.Core`: rule model + decision engine for selective egress
-  blocking logic
+  blocking logic (process + host/IP + port metadata)
 - `tests/VaultGuardian.Core.Tests`: unit tests showing selective blocking (specific
   process + destination) versus default allow behavior
+
+## Next build steps
+
+1. Add policy ingestion from WFP/WinDivert telemetry adapters into the core
+   decision engine (process + host/IP + port).
+2. Build the first WinUI 3 shell (monitored apps view, recent egress, block/unblock).
+3. Add theming/branding integration using `p-potvin/vault-themes` as source of truth:
+   - token references from `brand/tokens/tokens.ts`
+   - bilingual copy parity from `brand/i18n/brand.i18n.ts`
+   - logo and asset usage guidance from `assets/README.md` and `brand/brand-guide.md`
