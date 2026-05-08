@@ -1,6 +1,6 @@
 ﻿namespace VaultGuardian.Core.Tests;
 
-public class UnitTest1
+public class RuleDecisionEngineTests
 {
     [Fact]
     public void Evaluate_ShouldAllow_WhenNoRuleMatches()
