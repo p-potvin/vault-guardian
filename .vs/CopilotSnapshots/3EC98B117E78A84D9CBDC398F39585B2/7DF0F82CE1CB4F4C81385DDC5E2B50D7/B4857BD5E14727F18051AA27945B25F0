@@ -1,0 +1,115 @@
+﻿using System.Diagnostics;
+using System.Net;
+using Microsoft.Extensions.Logging;
+using WindivertDotnet;
+
+namespace VaultGuardian.Core.Interception;
+
+public sealed class WinDivertInterceptor : IInterceptor
+{
+    private readonly RuleDecisionEngine _engine;
+    private readonly ILogger<WinDivertInterceptor> _logger;
+    private readonly WinDivert _divert;
+    private Task? _runTask;
+    private CancellationTokenSource? _cts;
+
+    public WinDivertInterceptor(RuleDecisionEngine engine, ILogger<WinDivertInterceptor> logger)
+    {
+        _engine = engine;
+        _logger = logger;
+        // outbound traffic only, Using Flow layer to get ProcessId reliably
+        _divert = new WinDivert("outbound", WinDivertLayer.Flow);
+    }
+
+    public Task StartAsync(CancellationToken cancellationToken)
+    {
+        _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        _runTask = Task.Run(() => RunInterceptionLoopAsync(_cts.Token), _cts.Token);
+        return Task.CompletedTask;
+    }
+
+    private unsafe void RunInterceptionLoopAsync(CancellationToken ct)
+    {
+        // Allocate a packet with a buffer size (e.g., 65535)
+        var packet = new WinDivertPacket(65535);
+        var address = new WinDivertAddress();
+
+        while (!ct.IsCancellationRequested)
+        {
+            try
+            {
+                var bytesRecv = _divert.Recv(packet, address);
+                if (bytesRecv <= 0) continue;
+
+                var parseResult = packet.GetParseResult();
+
+                if (parseResult.IPV4Header != null && (parseResult.TcpHeader != null || parseResult.UdpHeader != null))
+                {
+                    var observation = CreateObservation(parseResult, address);
+                    var decision = _engine.Evaluate(observation);
+
+                    if (decision.Action == DecisionAction.Block)
+                    {
+                        uint pid = address.Flow != null ? address.Flow->ProcessId : 0;
+                        _logger.LogWarning("Blocking traffic: {Process} (PID: {Pid}) -> {Dest}:{Port} ({Rule})", 
+                            observation.ProcessName, pid, observation.RemoteAddress, observation.RemotePort, decision.MatchedRuleName);
+                        // Drop the packet by not calling Send
+                        continue;
+                    }
+                }
+
+                _divert.Send(packet, address);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in WinDivert loop");
+            }
+        }
+    }
+
+    private unsafe TrafficObservation CreateObservation(WinDivertParseResult parseResult, WinDivertAddress address)
+    {
+        var remoteAddr = parseResult.IPV4Header != null ? parseResult.IPV4Header->DstAddr.ToString() : "0.0.0.0";
+        var remotePort = 0;
+        if (parseResult.TcpHeader != null) remotePort = (int)parseResult.TcpHeader->DstPort;
+        else if (parseResult.UdpHeader != null) remotePort = (int)parseResult.UdpHeader->DstPort;
+
+        var protocol = parseResult.TcpHeader != null ? TrafficProtocol.Tcp : TrafficProtocol.Udp;
+
+        // Resolve process from PID
+        uint pid = address.Flow != null ? address.Flow->ProcessId : 0;
+        var processName = "Unknown";
+        var processPath = "Unknown";
+
+        if (pid > 0)
+        {
+            try
+            {
+                using var proc = Process.GetProcessById((int)pid);
+                processName = proc.ProcessName;
+                processPath = proc.MainModule?.FileName ?? "Unknown";
+            }
+            catch { /* Process exited or access denied */ }
+        }
+
+        return new TrafficObservation(
+            processName,
+            processPath,
+            null,
+            remoteAddr,
+            remotePort,
+            protocol);
+    }
+
+    public async Task StopAsync()
+    {
+        if (_cts != null) await _cts.CancelAsync();
+        if (_runTask != null) await _runTask;
+        _divert?.Dispose();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await StopAsync();
+    }
+}

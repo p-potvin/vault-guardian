@@ -1,0 +1,27 @@
+﻿<Application x:Class="VaultGuardian.UI.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:VaultGuardian.UI"
+             xmlns:h="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ui:ThemesDictionary Theme="Dark" />
+                <ui:ControlsDictionary />
+            </ResourceDictionary.MergedDictionaries>
+
+            <ui:TaskbarIcon x:Key="NotifyIcon"
+                           IconSource="pack://application:,,,/Assets/Icon.ico"
+                           ToolTipText="VaultGuardian Passive Monitor">
+                <ui:TaskbarIcon.Menu>
+                    <ContextMenu>
+                        <MenuItem Header="Show Dashboard" Click="ShowMainWindow_Click"/>
+                        <Separator/>
+                        <MenuItem Header="Exit" Click="ExitApp_Click"/>
+                    </ContextMenu>
+                </ui:TaskbarIcon.Menu>
+            </ui:TaskbarIcon>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

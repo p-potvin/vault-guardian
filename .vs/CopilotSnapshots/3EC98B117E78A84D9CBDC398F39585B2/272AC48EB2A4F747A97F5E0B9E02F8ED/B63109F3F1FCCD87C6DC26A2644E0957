@@ -1,0 +1,28 @@
+﻿using System.Windows;
+using VaultGuardian.Core.Observability;
+
+namespace VaultGuardian.UI;
+
+public partial class OverlayWindow : Window
+{
+    public OverlayWindow()
+    {
+        InitializeComponent();
+        PositionInCorner();
+    }
+
+    private void PositionInCorner()
+    {
+        var desktopWorkingArea = SystemParameters.WorkArea;
+        this.Left = desktopWorkingArea.Right - this.Width - 10;
+        this.Top = desktopWorkingArea.Top + 10;
+    }
+
+    public void UpdateMetrics(AggregateMetrics metrics)
+    {
+        CpuText.Text = $"{metrics.Resources.CpuUsagePercentage:F1}%";
+        RamText.Text = $"{(metrics.Resources.RamUsageBytes / 1024 / 1024 / 1024):F1} GB";
+        GpuText.Text = $"{metrics.Resources.GpuUsagePercentage:F1}%";
+        BlockedText.Text = metrics.Traffic.BlockedPackets.ToString();
+    }
+}

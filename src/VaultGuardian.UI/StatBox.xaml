@@ -1,0 +1,13 @@
+<UserControl x:Class="VaultGuardian.UI.StatBox"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border Background="{StaticResource BackgroundBrush}" CornerRadius="12" Padding="20,16" BorderThickness="1" BorderBrush="{StaticResource BorderBrush}">
+        <DockPanel>
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock x:Name="LabelText" Text="LABEL" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TertiaryTextBrush}" Margin="0,0,0,4"/>
+                <TextBlock x:Name="NumText" Text="0" FontSize="28" FontWeight="Bold" Foreground="{StaticResource PrimaryTextBrush}"/>
+            </StackPanel>
+            <TextBlock Text="" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="20" Foreground="{StaticResource TertiaryTextBrush}"/>
+        </DockPanel>
+    </Border>
+</UserControl>

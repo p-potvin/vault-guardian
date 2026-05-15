@@ -1,0 +1,15 @@
+﻿<UserControl x:Class="VaultGuardian.UI.StatBox"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             Margin="0,8">
+    <Border Background="{DynamicResource ControlFillColorDefaultBrush}" CornerRadius="8" Padding="16" BorderThickness="1" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}">
+        <DockPanel>
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock x:Name="NumText" Text="0" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                <TextBlock x:Name="LabelText" Text="LABEL" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+            </StackPanel>
+            <ui:SymbolIcon Symbol="Pulse24" HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="20" Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
+        </DockPanel>
+    </Border>
+</UserControl>

@@ -1,0 +1,78 @@
+﻿using System.Text;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
+using System.Windows.Shapes;
+using System.Windows.Threading;
+using VaultGuardian.Core.Observability;
+
+namespace VaultGuardian.UI;
+
+/// <summary>
+/// Interaction logic for MainWindow.xaml
+/// </summary>
+public partial class MainWindow : Window
+{
+    private readonly LiveMonitorService _monitor;
+    private readonly OverlayWindow _overlay;
+    private readonly DispatcherTimer _timer;
+
+    public MainWindow(LiveMonitorService monitor, OverlayWindow overlay)
+    {
+        InitializeComponent();
+        _monitor = monitor;
+        _overlay = overlay;
+
+        _timer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(1)
+        };
+        _timer.Tick += OnTick;
+        _timer.Start();
+
+        _overlay.Show();
+    }
+
+    private void OnTick(object? sender, EventArgs e)
+    {
+        var metrics = _monitor.GetLatestMetrics();
+        
+        // Update Dashboard
+        CpuMetric.Update(metrics.Resources.CpuUsagePercentage, $"{metrics.Resources.CpuUsagePercentage:F1}%");
+        RamMetric.Update(
+            (metrics.Resources.RamUsageBytes / metrics.Resources.RamUsageBytes + metrics.Resources.RamAvailableBytes) * 100, 
+            $"{(metrics.Resources.RamUsageBytes / 1024 / 1024 / 1024):F1} GB");
+        GpuMetric.Update(metrics.Resources.GpuUsagePercentage, $"{metrics.Resources.GpuUsagePercentage:F1}%");
+
+        TotalStats.Update(metrics.Traffic.TotalPackets);
+        AllowedStats.Update(metrics.Traffic.AllowedPackets);
+        BlockedStats.Update(metrics.Traffic.BlockedPackets);
+
+        // Update Overlay
+        if (_overlay.IsVisible)
+        {
+            _overlay.UpdateMetrics(metrics);
+        }
+
+        // Update Tray Tooltip (Simplified)
+        this.Title = $"VG - CPU: {metrics.Resources.CpuUsagePercentage:F0}% GPU: {metrics.Resources.GpuUsagePercentage:F0}%";
+    }
+
+    private void OnOverlayToggled(object sender, RoutedEventArgs e)
+    {
+        if (ShowOverlayCheckbox.IsChecked == true) _overlay.Show();
+        else _overlay.Hide();
+    }
+
+    protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+    {
+        _timer.Stop();
+        _overlay.Close();
+        base.OnClosing(e);
+    }
+}

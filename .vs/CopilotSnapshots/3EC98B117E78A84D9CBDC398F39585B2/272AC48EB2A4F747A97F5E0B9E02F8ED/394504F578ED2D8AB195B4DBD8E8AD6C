@@ -1,0 +1,77 @@
+﻿<ui:FluentWindow x:Class="VaultGuardian.UI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:VaultGuardian.UI"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        mc:Ignorable="d"
+        Title="VaultGuardian" Height="650" Width="1000" 
+        ExtendsContentIntoTitleBar="True"
+        WindowBackdropType="Mica"
+        WindowStartupLocation="CenterScreen">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar Title="VaultGuardian" Grid.Row="0" Margin="0,0,0,10"/>
+
+        <Grid Grid.Row="1" Margin="24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0" Margin="0,0,0,24">
+                <TextBlock Text="Performance &amp; Security Dashboard" FontSize="28" FontWeight="SemiBold"/>
+                <TextBlock Text="Real-time system health and egress traffic monitoring" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="14"/>
+            </StackPanel>
+
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="1.2*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Resources Column -->
+                <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                    <ui:CardControl Header="System Resources" Margin="0,0,0,12">
+                        <StackPanel Margin="8">
+                            <local:MetricControl x:Name="CpuMetric" Label="Processor Load" Color="#60CDFF"/>
+                            <local:MetricControl x:Name="RamMetric" Label="Physical Memory" Color="#6CCB5F"/>
+                            <local:MetricControl x:Name="GpuMetric" Label="NVIDIA GPU Core" Color="#76B900"/>
+                        </StackPanel>
+                    </ui:CardControl>
+
+                    <ui:CardControl Header="Live Actions" Icon="{ui:SymbolIcon Symbol=Shield24}">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <ui:ToggleSwitch x:Name="ShowOverlayCheckbox" Content="Desktop Overlay" IsChecked="True" Checked="OnOverlayToggled" Unchecked="OnOverlayToggled" Margin="0,0,12,0"/>
+                            <ui:Button Content="View Rules" Icon="{ui:SymbolIcon Symbol=Settings24}" Appearance="Secondary"/>
+                        </StackPanel>
+                    </ui:CardControl>
+                </StackPanel>
+
+                <!-- Traffic Column -->
+                <ui:Card Grid.Column="1" Margin="12,0,0,12" VerticalAlignment="Top">
+                   <StackPanel>
+                        <TextBlock Text="Egress Traffic Stats" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,16"/>
+                        <local:StatBox x:Name="TotalStats" Label="TOTAL FLOWS" Color="#999"/>
+                        <local:StatBox x:Name="AllowedStats" Label="ALLOWED" Color="#28A745"/>
+                        <local:StatBox x:Name="BlockedStats" Label="BLOCKED" Color="#E81123"/>
+                   </StackPanel>
+                </ui:Card>
+            </Grid>
+
+            <ui:InfoBar Grid.Row="2" 
+                       Title="System Protected" 
+                       Message="WinDivert active. Rules are being enforced across all processes." 
+                       Severity="Success" 
+                       IsOpen="True" 
+                       IsClosable="False"
+                       Margin="0,24,0,0"/>
+        </Grid>
+    </Grid>
+</ui:FluentWindow>
