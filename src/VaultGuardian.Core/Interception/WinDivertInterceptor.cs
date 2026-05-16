@@ -63,8 +63,8 @@ public sealed class WinDivertInterceptor : IInterceptor
                         // Drop the packet by not calling Send
                         continue;
                     }
-                    
-                    _stats.IncrementAllowed();
+
+                    _stats.IncrementAllowed(bytesRecv, true);
                 }
 
                 _divert.Send(packet, address);

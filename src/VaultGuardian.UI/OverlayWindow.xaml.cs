@@ -11,6 +11,42 @@ public partial class OverlayWindow : Window
         PositionInCorner();
     }
 
+    private void Window_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        if (e.LeftButton == System.Windows.Input.MouseButtonState.Pressed)
+        {
+            this.DragMove();
+        }
+    }
+
+    private void Window_LocationChanged(object sender, EventArgs e)
+    {
+        if (System.Windows.Input.Mouse.LeftButton == System.Windows.Input.MouseButtonState.Pressed)
+        {
+            const double snapDistance = 20.0;
+            const double gridSize = 40.0;
+            var workArea = SystemParameters.WorkArea;
+
+            double newLeft = this.Left;
+            double newTop = this.Top;
+
+            // Snap to Grid (Virtual Desktop Desktop Icons simulation)
+            newLeft = Math.Round(newLeft / gridSize) * gridSize;
+            newTop = Math.Round(newTop / gridSize) * gridSize;
+
+            // Snap to Edges
+            if (Math.Abs(newLeft - workArea.Left) < snapDistance) newLeft = workArea.Left;
+            if (Math.Abs(newLeft + this.Width - workArea.Right) < snapDistance) newLeft = workArea.Right - this.Width;
+
+            if (Math.Abs(newTop - workArea.Top) < snapDistance) newTop = workArea.Top;
+            if (Math.Abs(newTop + this.Height - workArea.Bottom) < snapDistance) newTop = workArea.Bottom - this.Height;
+
+            // Only apply if it actually changed to prevent jitter
+            if (Math.Abs(this.Left - newLeft) > 1) this.Left = newLeft;
+            if (Math.Abs(this.Top - newTop) > 1) this.Top = newTop;
+        }
+    }
+
     private void PositionInCorner()
     {
         var desktopWorkingArea = SystemParameters.WorkArea;
@@ -30,7 +66,10 @@ public partial class OverlayWindow : Window
 
         GpuText.Text = $"{metrics.Resources.GpuUsagePercentage:F1}%";
         GpuBar.Value = metrics.Resources.GpuUsagePercentage;
-        
+
+        CudaText.Text = $"{metrics.Resources.CudaCoreUtilization:F1}%";
+        CudaBar.Value = metrics.Resources.CudaCoreUtilization;
+
         BlockedText.Text = metrics.Traffic.BlockedPackets.ToString();
     }
 }

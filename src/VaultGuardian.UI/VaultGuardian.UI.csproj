@@ -12,9 +12,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="Assets\NotifyIcon.ico">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Resource>
     <Resource Include="Assets\Icon.ico" />
   </ItemGroup>
 
@@ -22,6 +19,7 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
+    <ApplicationIcon>Assets\Icon.ico</ApplicationIcon>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <Platforms>AnyCPU;x64</Platforms>

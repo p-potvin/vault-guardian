@@ -6,6 +6,8 @@
             <TextBlock x:Name="LabelText" Text="Usage" FontSize="14" Foreground="{StaticResource SecondaryTextBrush}"/>
             <TextBlock x:Name="ValueText" Text="0.0%" HorizontalAlignment="Right" FontWeight="Bold" FontSize="14" Foreground="{StaticResource PrimaryTextBrush}"/>
         </Grid>
-        <ProgressBar x:Name="Bar" Height="4" Minimum="0" Maximum="100"/>
+        <Border Background="#1AFFFFFF" CornerRadius="3" Height="6">
+            <ProgressBar x:Name="Bar" Height="6" Minimum="0" Maximum="100" BorderThickness="0" Background="Transparent"/>
+        </Border>
     </StackPanel>
 </UserControl>

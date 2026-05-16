@@ -6,13 +6,21 @@
     <Application.Resources>
         <ResourceDictionary>
             <h:TaskbarIcon x:Key="NotifyIcon"
-                           IconSource="pack://application:,,,/Assets/Icon.ico"
+                           IconSource="/Assets/Icon.ico"
                            ToolTipText="VaultGuardian Passive Monitor">
                 <h:TaskbarIcon.ContextMenu>
                     <ContextMenu>
-                        <MenuItem Header="Show Dashboard" Click="ShowMainWindow_Click"/>
+                        <MenuItem Header="Dashboard" Click="ShowMainWindow_Click">
+                            <MenuItem.Icon>
+                                <Image Source="/Assets/Icon.ico" Width="16" Height="16"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
                         <Separator/>
-                        <MenuItem Header="Exit" Click="ExitApp_Click"/>
+                        <MenuItem Header="About" Click="About_Click"/>
+                        <MenuItem Header="Help" Click="Help_Click"/>
+                        <MenuItem Header="Settings" Click="Settings_Click"/>
+                        <Separator/>
+                        <MenuItem Header="Quit" Click="ExitApp_Click"/>
                     </ContextMenu>
                 </h:TaskbarIcon.ContextMenu>
             </h:TaskbarIcon>

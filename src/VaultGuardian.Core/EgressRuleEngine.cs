@@ -82,16 +82,39 @@ public sealed record DecisionResult(DecisionAction Action, string? MatchedRuleNa
 
 public sealed class RuleDecisionEngine
 {
-    private readonly IReadOnlyList<EgressRule> _rules;
+    private List<EgressRule> _rules;
+    private readonly object _lock = new();
 
     public RuleDecisionEngine(IEnumerable<EgressRule> rules)
     {
         _rules = rules.ToList();
     }
 
+    public IReadOnlyList<EgressRule> Rules
+    {
+        get
+        {
+            lock (_lock) return _rules.ToList();
+        }
+    }
+
+    public void UpdateRules(IEnumerable<EgressRule> rules)
+    {
+        lock (_lock)
+        {
+            _rules = rules.ToList();
+        }
+    }
+
     public DecisionResult Evaluate(TrafficObservation observation)
     {
-        foreach (var rule in _rules)
+        List<EgressRule> currentRules;
+        lock (_lock)
+        {
+            currentRules = _rules;
+        }
+
+        foreach (var rule in currentRules)
         {
             if (!rule.Matches(observation))
             {

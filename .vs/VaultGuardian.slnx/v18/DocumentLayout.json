@@ -3,11 +3,55 @@
   "WorkspaceRootPath": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{CE2E9F9A-D4F4-E5CE-C500-A4A69A6CA952}|src\\VaultGuardian.UI\\VaultGuardian.UI.csproj|c:\\users\\administrator\\desktop\\github repos\\vault-guardian\\src\\vaultguardian.ui\\overlaywindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{CE2E9F9A-D4F4-E5CE-C500-A4A69A6CA952}|src\\VaultGuardian.UI\\VaultGuardian.UI.csproj|solutionrelative:src\\vaultguardian.ui\\overlaywindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Administrator\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-acef4bcc-0a7c-45f5-a720-12e1e4424c33.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|MarkdownSecurePreview"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DB71BBCA-F287-DA38-BA48-79C55435994A}|src\\VaultGuardian.Core\\VaultGuardian.Core.csproj|c:\\users\\administrator\\desktop\\github repos\\vault-guardian\\src\\vaultguardian.core\\observability\\trafficstats.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DB71BBCA-F287-DA38-BA48-79C55435994A}|src\\VaultGuardian.Core\\VaultGuardian.Core.csproj|solutionrelative:src\\vaultguardian.core\\observability\\trafficstats.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CE2E9F9A-D4F4-E5CE-C500-A4A69A6CA952}|src\\VaultGuardian.UI\\VaultGuardian.UI.csproj|c:\\users\\administrator\\desktop\\github repos\\vault-guardian\\src\\vaultguardian.ui\\vaultguardian.ui.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{CE2E9F9A-D4F4-E5CE-C500-A4A69A6CA952}|src\\VaultGuardian.UI\\VaultGuardian.UI.csproj|solutionrelative:src\\vaultguardian.ui\\vaultguardian.ui.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{CE2E9F9A-D4F4-E5CE-C500-A4A69A6CA952}|src\\VaultGuardian.UI\\VaultGuardian.UI.csproj|c:\\users\\administrator\\desktop\\github repos\\vault-guardian\\src\\vaultguardian.ui\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{CE2E9F9A-D4F4-E5CE-C500-A4A69A6CA952}|src\\VaultGuardian.UI\\VaultGuardian.UI.csproj|solutionrelative:src\\vaultguardian.ui\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Administrator\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-118bc93e-787e-4da8-9cbd-c398f39585b2.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|MarkdownSecurePreview"
+      "AbsoluteMoniker": "D:0:0:{CE2E9F9A-D4F4-E5CE-C500-A4A69A6CA952}|src\\VaultGuardian.UI\\VaultGuardian.UI.csproj|c:\\users\\administrator\\desktop\\github repos\\vault-guardian\\src\\vaultguardian.ui\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{CE2E9F9A-D4F4-E5CE-C500-A4A69A6CA952}|src\\VaultGuardian.UI\\VaultGuardian.UI.csproj|solutionrelative:src\\vaultguardian.ui\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DB71BBCA-F287-DA38-BA48-79C55435994A}|src\\VaultGuardian.Core\\VaultGuardian.Core.csproj|c:\\users\\administrator\\desktop\\github repos\\vault-guardian\\src\\vaultguardian.core\\interception\\windivertinterceptor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DB71BBCA-F287-DA38-BA48-79C55435994A}|src\\VaultGuardian.Core\\VaultGuardian.Core.csproj|solutionrelative:src\\vaultguardian.core\\interception\\windivertinterceptor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DB71BBCA-F287-DA38-BA48-79C55435994A}|src\\VaultGuardian.Core\\VaultGuardian.Core.csproj|c:\\users\\administrator\\desktop\\github repos\\vault-guardian\\src\\vaultguardian.core\\observability\\resourcemonitor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DB71BBCA-F287-DA38-BA48-79C55435994A}|src\\VaultGuardian.Core\\VaultGuardian.Core.csproj|solutionrelative:src\\vaultguardian.core\\observability\\resourcemonitor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DB71BBCA-F287-DA38-BA48-79C55435994A}|src\\VaultGuardian.Core\\VaultGuardian.Core.csproj|c:\\users\\administrator\\desktop\\github repos\\vault-guardian\\src\\vaultguardian.core\\observability\\systemmetrics.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DB71BBCA-F287-DA38-BA48-79C55435994A}|src\\VaultGuardian.Core\\VaultGuardian.Core.csproj|solutionrelative:src\\vaultguardian.core\\observability\\systemmetrics.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CE2E9F9A-D4F4-E5CE-C500-A4A69A6CA952}|src\\VaultGuardian.UI\\VaultGuardian.UI.csproj|c:\\users\\administrator\\desktop\\github repos\\vault-guardian\\src\\vaultguardian.ui\\overlaywindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CE2E9F9A-D4F4-E5CE-C500-A4A69A6CA952}|src\\VaultGuardian.UI\\VaultGuardian.UI.csproj|solutionrelative:src\\vaultguardian.ui\\overlaywindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CE2E9F9A-D4F4-E5CE-C500-A4A69A6CA952}|src\\VaultGuardian.UI\\VaultGuardian.UI.csproj|c:\\users\\administrator\\desktop\\github repos\\vault-guardian\\src\\vaultguardian.ui\\app.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{CE2E9F9A-D4F4-E5CE-C500-A4A69A6CA952}|src\\VaultGuardian.UI\\VaultGuardian.UI.csproj|solutionrelative:src\\vaultguardian.ui\\app.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CE2E9F9A-D4F4-E5CE-C500-A4A69A6CA952}|src\\VaultGuardian.UI\\VaultGuardian.UI.csproj|c:\\users\\administrator\\desktop\\github repos\\vault-guardian\\src\\vaultguardian.ui\\metriccontrol.xaml||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{CE2E9F9A-D4F4-E5CE-C500-A4A69A6CA952}|src\\VaultGuardian.UI\\VaultGuardian.UI.csproj|solutionrelative:src\\vaultguardian.ui\\metriccontrol.xaml||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CE2E9F9A-D4F4-E5CE-C500-A4A69A6CA952}|src\\VaultGuardian.UI\\VaultGuardian.UI.csproj|c:\\users\\administrator\\desktop\\github repos\\vault-guardian\\src\\vaultguardian.ui\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CE2E9F9A-D4F4-E5CE-C500-A4A69A6CA952}|src\\VaultGuardian.UI\\VaultGuardian.UI.csproj|solutionrelative:src\\vaultguardian.ui\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -17,8 +61,21 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 11,
           "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "plan-acef4bcc-0a7c-45f5-a720-12e1e4424c33.md [Preview]",
+              "DocumentMoniker": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-acef4bcc-0a7c-45f5-a720-12e1e4424c33.md",
+              "RelativeDocumentMoniker": "..\\..\\..\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-acef4bcc-0a7c-45f5-a720-12e1e4424c33.md",
+              "ToolTip": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-acef4bcc-0a7c-45f5-a720-12e1e4424c33.md [Preview]",
+              "RelativeToolTip": "..\\..\\..\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-acef4bcc-0a7c-45f5-a720-12e1e4424c33.md [Preview]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2026-05-15T18:34:58.798Z",
+              "IsPinned": true,
+              "EditorCaption": " [Preview]"
+            },
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{1c64b9c2-e352-428e-a56d-0ace190b99a6}"
@@ -29,28 +86,156 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "MainWindow.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.UI\\MainWindow.xaml.cs",
-              "RelativeDocumentMoniker": "src\\VaultGuardian.UI\\MainWindow.xaml.cs",
-              "ToolTip": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.UI\\MainWindow.xaml.cs \u2B24",
-              "RelativeToolTip": "src\\VaultGuardian.UI\\MainWindow.xaml.cs \u2B24",
-              "ViewState": "AgIAABIAAAAAAAAAAAAAABQAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-15T00:37:59.296Z",
+              "DocumentIndex": 3,
+              "Title": "VaultGuardian.UI",
+              "DocumentMoniker": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.UI\\VaultGuardian.UI.csproj",
+              "RelativeDocumentMoniker": "src\\VaultGuardian.UI\\VaultGuardian.UI.csproj",
+              "ToolTip": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.UI\\VaultGuardian.UI.csproj",
+              "RelativeToolTip": "src\\VaultGuardian.UI\\VaultGuardian.UI.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-05-16T00:32:15.463Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "plan-118bc93e-787e-4da8-9cbd-c398f39585b2.md [Preview]",
-              "DocumentMoniker": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-118bc93e-787e-4da8-9cbd-c398f39585b2.md",
-              "RelativeDocumentMoniker": "..\\..\\..\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-118bc93e-787e-4da8-9cbd-c398f39585b2.md",
-              "ToolTip": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-118bc93e-787e-4da8-9cbd-c398f39585b2.md [Preview]",
-              "RelativeToolTip": "..\\..\\..\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-118bc93e-787e-4da8-9cbd-c398f39585b2.md [Preview]",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
-              "WhenOpened": "2026-05-14T21:38:55.728Z",
-              "EditorCaption": " [Preview]"
+              "DocumentIndex": 2,
+              "Title": "TrafficStats.cs",
+              "DocumentMoniker": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.Core\\Observability\\TrafficStats.cs",
+              "RelativeDocumentMoniker": "src\\VaultGuardian.Core\\Observability\\TrafficStats.cs",
+              "ToolTip": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.Core\\Observability\\TrafficStats.cs",
+              "RelativeToolTip": "src\\VaultGuardian.Core\\Observability\\TrafficStats.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-16T00:32:04.022Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "MainWindow.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.UI\\MainWindow.xaml.cs",
+              "RelativeDocumentMoniker": "src\\VaultGuardian.UI\\MainWindow.xaml.cs",
+              "ToolTip": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.UI\\MainWindow.xaml.cs",
+              "RelativeToolTip": "src\\VaultGuardian.UI\\MainWindow.xaml.cs",
+              "ViewState": "AgIAADIAAAAAAAAAAAAswAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-16T00:31:48.709Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "MainWindow.xaml",
+              "DocumentMoniker": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.UI\\MainWindow.xaml",
+              "RelativeDocumentMoniker": "src\\VaultGuardian.UI\\MainWindow.xaml",
+              "ToolTip": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.UI\\MainWindow.xaml",
+              "RelativeToolTip": "src\\VaultGuardian.UI\\MainWindow.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2026-05-16T00:31:35.102Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "WinDivertInterceptor.cs",
+              "DocumentMoniker": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.Core\\Interception\\WinDivertInterceptor.cs",
+              "RelativeDocumentMoniker": "src\\VaultGuardian.Core\\Interception\\WinDivertInterceptor.cs",
+              "ToolTip": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.Core\\Interception\\WinDivertInterceptor.cs",
+              "RelativeToolTip": "src\\VaultGuardian.Core\\Interception\\WinDivertInterceptor.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-16T00:32:09.144Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "ResourceMonitor.cs",
+              "DocumentMoniker": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.Core\\Observability\\ResourceMonitor.cs",
+              "RelativeDocumentMoniker": "src\\VaultGuardian.Core\\Observability\\ResourceMonitor.cs",
+              "ToolTip": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.Core\\Observability\\ResourceMonitor.cs",
+              "RelativeToolTip": "src\\VaultGuardian.Core\\Observability\\ResourceMonitor.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-16T00:32:07.442Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "SystemMetrics.cs",
+              "DocumentMoniker": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.Core\\Observability\\SystemMetrics.cs",
+              "RelativeDocumentMoniker": "src\\VaultGuardian.Core\\Observability\\SystemMetrics.cs",
+              "ToolTip": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.Core\\Observability\\SystemMetrics.cs",
+              "RelativeToolTip": "src\\VaultGuardian.Core\\Observability\\SystemMetrics.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-16T00:32:05.925Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "OverlayWindow.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.UI\\OverlayWindow.xaml.cs",
+              "RelativeDocumentMoniker": "src\\VaultGuardian.UI\\OverlayWindow.xaml.cs",
+              "ToolTip": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.UI\\OverlayWindow.xaml.cs",
+              "RelativeToolTip": "src\\VaultGuardian.UI\\OverlayWindow.xaml.cs",
+              "ViewState": "AgIAACQAAAAAAAAAAAAqwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-16T00:32:04.299Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "OverlayWindow.xaml",
+              "DocumentMoniker": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.UI\\OverlayWindow.xaml",
+              "RelativeDocumentMoniker": "src\\VaultGuardian.UI\\OverlayWindow.xaml",
+              "ToolTip": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.UI\\OverlayWindow.xaml",
+              "RelativeToolTip": "src\\VaultGuardian.UI\\OverlayWindow.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2026-05-16T00:31:57.614Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "App.xaml",
+              "DocumentMoniker": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.UI\\App.xaml",
+              "RelativeDocumentMoniker": "src\\VaultGuardian.UI\\App.xaml",
+              "ToolTip": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.UI\\App.xaml",
+              "RelativeToolTip": "src\\VaultGuardian.UI\\App.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2026-05-16T00:31:53.473Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "MetricControl.xaml",
+              "DocumentMoniker": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.UI\\MetricControl.xaml",
+              "RelativeDocumentMoniker": "src\\VaultGuardian.UI\\MetricControl.xaml",
+              "ToolTip": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.UI\\MetricControl.xaml",
+              "RelativeToolTip": "src\\VaultGuardian.UI\\MetricControl.xaml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2026-05-16T00:31:50.169Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "App.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.UI\\App.xaml.cs",
+              "RelativeDocumentMoniker": "src\\VaultGuardian.UI\\App.xaml.cs",
+              "ToolTip": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.UI\\App.xaml.cs",
+              "RelativeToolTip": "src\\VaultGuardian.UI\\App.xaml.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-16T00:31:44.302Z",
+              "EditorCaption": ""
             }
           ]
         }

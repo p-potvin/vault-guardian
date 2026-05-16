@@ -6,6 +6,7 @@
         xmlns:local="clr-namespace:VaultGuardian.UI"
         mc:Ignorable="d"
         Title="VaultGuardian" Height="650" Width="1000" 
+        Icon="/Assets/Icon.ico"
         Background="{StaticResource BackgroundBrush}"
         WindowStartupLocation="CenterScreen"
         Foreground="{StaticResource PrimaryTextBrush}">
@@ -22,51 +23,200 @@
         </StackPanel>
 
         <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="2*"/>
-                <ColumnDefinition Width="1.2*"/>
-            </Grid.ColumnDefinitions>
+            <TabControl Background="Transparent" BorderThickness="0">
+                <TabControl.Resources>
+                    <Style TargetType="TabItem">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="TabItem">
+                                    <Border Name="Border" Margin="0,0,10,0" Padding="15,8" Background="Transparent" BorderBrush="{StaticResource AccentBrush}" BorderThickness="0,0,0,0" CornerRadius="4,4,0,0">
+                                        <ContentPresenter ContentSource="Header" TextElement.Foreground="{StaticResource SecondaryTextBrush}"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="Border" Property="Background" Value="{StaticResource CardBrush}"/>
+                                            <Setter TargetName="Border" Property="BorderThickness" Value="0,0,0,2"/>
+                                            <Setter Property="TextElement.Foreground" Value="White"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </TabControl.Resources>
 
-            <!-- Resources Column -->
-            <StackPanel Grid.Column="0" Margin="0,0,16,0">
-                <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="12" Padding="20" Margin="0,0,0,16">
-                    <StackPanel>
-                        <TextBlock Text="System Resources" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,20"/>
-                        <local:MetricControl x:Name="CpuMetric" Label="Processor Load" Color="#60CDFF" Margin="0,0,0,20"/>
-                        <local:MetricControl x:Name="RamMetric" Label="Physical Memory" Color="#6CCB5F" Margin="0,0,0,20"/>
-                        <local:MetricControl x:Name="GpuMetric" Label="NVIDIA GPU Core" Color="#76B900"/>
-                    </StackPanel>
-                </Border>
+                <TabItem Header="Dashboard">
+                    <Grid Margin="0,20,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1.5*"/>
+                            <ColumnDefinition Width="1.5*"/>
+                        </Grid.ColumnDefinitions>
 
-                <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="12" Padding="20">
-                    <DockPanel>
-                        <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="Live Actions" FontSize="18" FontWeight="SemiBold"/>
-                            <TextBlock Text="Control how monitoring is displayed" Foreground="{StaticResource SecondaryTextBrush}" FontSize="12"/>
+                        <!-- Traffic Monitoring -->
+                        <StackPanel Grid.Column="0" Margin="0,0,16,0">
+                            <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="12" Padding="20" Margin="0,0,0,16">
+                                <StackPanel>
+                                    <TextBlock Text="Network Traffic Flow" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,20"/>
+                                    <local:MetricControl x:Name="TrafficSentMetric" Label="Outbound bandwidth" Color="#60CDFF" Margin="0,0,0,15"/>
+                                    <local:MetricControl x:Name="TrafficRecvMetric" Label="Inbound bandwidth" Color="#6CCB5F" Margin="0,0,0,15"/>
+
+                                    <Grid Margin="0,5,0,0">
+                                        <local:StatBox x:Name="TotalStats" Label="TOTAL FLOWS" Color="#999" Margin="0,0,10,0"/>
+                                        <local:StatBox x:Name="BlockedStats" Label="BLOCKED" Color="#E81123" HorizontalAlignment="Right"/>
+                                    </Grid>
+
+                                    <Button Content="View Network Details" Click="OnToggleDetailsClick" Margin="0,15,0,0" Padding="10,5" Background="Transparent" BorderBrush="{StaticResource BorderBrush}" Foreground="{StaticResource SecondaryTextBrush}"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="12" Padding="20">
+                                <DockPanel>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="Live Actions" FontSize="18" FontWeight="SemiBold"/>
+                                        <TextBlock Text="Control how monitoring is displayed" Foreground="{StaticResource SecondaryTextBrush}" FontSize="12"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                        <CheckBox x:Name="ShowOverlayCheckbox" Content="Desktop Overlay" IsChecked="True" Checked="OnOverlayToggled" Unchecked="OnOverlayToggled" Margin="0,0,20,0" VerticalAlignment="Center" Foreground="White"/>
+                                        <Button Content="Manage Rules" Click="OnManageRulesClick" Padding="20,8" Background="{StaticResource AccentBrush}" Foreground="White" BorderThickness="0" Cursor="Hand">
+                                            <Button.Resources>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="CornerRadius" Value="6"/>
+                                                </Style>
+                                            </Button.Resources>
+                                        </Button>
+                                    </StackPanel>
+                                </DockPanel>
+                            </Border>
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                            <CheckBox x:Name="ShowOverlayCheckbox" Content="Desktop Overlay" IsChecked="True" Checked="OnOverlayToggled" Unchecked="OnOverlayToggled" Margin="0,0,20,0" VerticalAlignment="Center" Foreground="White"/>
-                            <Button Content="Manage Rules" Padding="20,8" Background="{StaticResource AccentBrush}" Foreground="White" BorderThickness="0" Cursor="Hand">
-                                <Button.Resources>
-                                    <Style TargetType="Border">
-                                        <Setter Property="CornerRadius" Value="6"/>
-                                    </Style>
-                                </Button.Resources>
-                            </Button>
-                        </StackPanel>
-                    </DockPanel>
-                </Border>
-            </StackPanel>
 
-            <!-- Traffic Column -->
-            <Border Grid.Column="1" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="12" Padding="20" Margin="0,0,0,16" VerticalAlignment="Top">
-               <StackPanel>
-                    <TextBlock Text="Egress Traffic Stats" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,20"/>
-                    <local:StatBox x:Name="TotalStats" Label="TOTAL FLOWS" Color="#999" Margin="0,0,0,12"/>
-                    <local:StatBox x:Name="AllowedStats" Label="ALLOWED" Color="#28A745" Margin="0,0,0,12"/>
-                    <local:StatBox x:Name="BlockedStats" Label="BLOCKED" Color="#E81123"/>
-               </StackPanel>
-            </Border>
+                        <!-- Disk Monitoring -->
+                        <Border Grid.Column="1" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="12" Padding="20" Margin="0,0,0,16" VerticalAlignment="Top">
+                           <StackPanel>
+                                <TextBlock Text="Disk Operations" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,20"/>
+                                <local:MetricControl x:Name="DiskReadMetric" Label="Active Read Speed" Color="#4A90E2" Margin="0,0,0,15"/>
+                                <local:MetricControl x:Name="DiskWriteMetric" Label="Active Write Speed" Color="#F5A623" Margin="0,0,0,15"/>
+
+                                <Grid Margin="0,10,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="QUEUE" Foreground="{StaticResource SecondaryTextBrush}" FontSize="10"/>
+                                        <TextBlock x:Name="DiskQueueText" Text="0" Foreground="White" FontSize="18" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                    <StackPanel HorizontalAlignment="Right">
+                                        <TextBlock Text="ACTIVE TIME" Foreground="{StaticResource SecondaryTextBrush}" FontSize="10"/>
+                                        <TextBlock x:Name="DiskActiveText" Text="0%" Foreground="White" FontSize="18" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <Button Content="View Disk Details" Click="OnToggleDetailsClick" Margin="0,15,0,0" Padding="10,5" Background="Transparent" BorderBrush="{StaticResource BorderBrush}" Foreground="{StaticResource SecondaryTextBrush}"/>
+                           </StackPanel>
+                        </Border>
+
+                        <!-- Details Pop-up (Hidden by default) -->
+                        <Grid x:Name="DetailsPopup" Grid.ColumnSpan="2" Background="#F01C1C1C" Visibility="Collapsed" Panel.ZIndex="10" Margin="-10">
+                            <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource AccentBrush}" BorderThickness="1" CornerRadius="12" Margin="40" Padding="30">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Text="System Deep Investigation" FontSize="24" FontWeight="Bold" Margin="0,0,0,20"/>
+
+                                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                        <StackPanel>
+                                            <TextBlock Text="Disk &amp; Partition Layout" Foreground="{StaticResource AccentBrush}" FontWeight="Bold" Margin="0,0,0,10"/>
+                                            <TextBlock x:Name="DiskDetailedDetails" Text="Querying WMI/Performance counters..." Foreground="White" Margin="0,0,0,20" TextWrapping="Wrap"/>
+
+                                            <TextBlock Text="Active Network Adapters" Foreground="{StaticResource SuccessBrush}" FontWeight="Bold" Margin="0,0,0,10"/>
+                                            <TextBlock x:Name="NetworkDetailedDetails" Text="Resolving interface statistics..." Foreground="White" Margin="0,0,0,20" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </ScrollViewer>
+
+                                    <Button Grid.Row="2" Content="Close Details" Click="OnToggleDetailsClick" HorizontalAlignment="Right" Padding="15,8" Background="{StaticResource AccentBrush}" Foreground="White" BorderThickness="0"/>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="Performance Info">
+                    <Grid Margin="0,20,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                            <Border Background="{StaticResource CardBrush}" CornerRadius="12" Padding="20" Margin="0,0,0,15">
+                                <StackPanel>
+                                    <TextBlock Text="CORE UTILIZATION" Foreground="{StaticResource SecondaryTextBrush}" FontSize="12" FontWeight="Bold" Margin="0,0,0,15"/>
+                                    <local:MetricControl x:Name="CpuDetailed" Label="CPU Utilization" Color="#60CDFF" Margin="0,0,0,15"/>
+                                    <local:MetricControl x:Name="RamDetailed" Label="Memory Usage" Color="#6CCB5F" Margin="0,0,0,15"/>
+                                    <TextBlock x:Name="RamDetailsText" Text="Available: 0 GB | Total: 0 GB" Foreground="{StaticResource SecondaryTextBrush}" FontSize="11" Margin="0,0,0,15"/>
+
+                                    <local:MetricControl x:Name="GpuDetailed" Label="GPU Load" Color="#76B900" Margin="0,0,0,15"/>
+                                    <local:MetricControl x:Name="CudaDetailedMetric" Label="CUDA Cores" Color="#50C878" Margin="0,0,0,15"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Background="{StaticResource CardBrush}" CornerRadius="12" Padding="20">
+                                <StackPanel>
+                                    <TextBlock Text="STORAGE SUB-SYSTEM" Foreground="{StaticResource SecondaryTextBrush}" FontSize="12" FontWeight="Bold" Margin="0,0,0,15"/>
+                                    <local:MetricControl x:Name="DiskDetailedRead" Label="Disk Read Throughput" Color="#4A90E2" Margin="0,0,0,15"/>
+                                    <local:MetricControl x:Name="DiskDetailedWrite" Label="Disk Write Throughput" Color="#F5A623" Margin="0,0,0,15"/>
+                                    <local:MetricControl x:Name="DiskDetailedTime" Label="Active Time" Color="#E81123" Margin="0,0,0,15"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                            <Border Background="{StaticResource CardBrush}" CornerRadius="12" Padding="20">
+                                <StackPanel>
+                                    <TextBlock Text="GPU DETAILED (NVML)" Foreground="{StaticResource SecondaryTextBrush}" FontSize="12" FontWeight="Bold" Margin="0,0,0,15"/>
+
+                                    <local:MetricControl x:Name="GpuVramMetric" Label="VRAM Utilization" Color="#4A90E2" Margin="0,0,0,15"/>
+
+                                    <Grid Margin="0,10,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="TEMP" Foreground="{StaticResource SecondaryTextBrush}" FontSize="10"/>
+                                            <TextBlock x:Name="GpuTempText" Text="0°C" Foreground="White" FontSize="18" FontWeight="SemiBold"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1">
+                                            <TextBlock Text="FAN" Foreground="{StaticResource SecondaryTextBrush}" FontSize="10"/>
+                                            <TextBlock x:Name="GpuFanText" Text="0%" Foreground="White" FontSize="18" FontWeight="SemiBold"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Separator Background="{StaticResource BorderBrush}" Margin="0,15"/>
+
+                                    <Grid>
+                                        <StackPanel>
+                                            <TextBlock Text="POWER DRAW" Foreground="{StaticResource SecondaryTextBrush}" FontSize="10"/>
+                                            <TextBlock x:Name="GpuPowerText" Text="0.0 W" Foreground="White" FontSize="16"/>
+                                        </StackPanel>
+                                        <StackPanel HorizontalAlignment="Right">
+                                            <TextBlock Text="CUDA ENGINE" Foreground="{StaticResource SecondaryTextBrush}" FontSize="10"/>
+                                            <TextBlock x:Name="CudaDetailedText" Text="0% Utilized" Foreground="White" FontSize="16"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Background="{StaticResource CardBrush}" CornerRadius="12" Padding="20" Margin="0,15,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="NETWORKING" Foreground="{StaticResource SecondaryTextBrush}" FontSize="12" FontWeight="Bold" Margin="0,0,0,15"/>
+                                    <TextBlock x:Name="TrafficDetailsText" Text="Monitoring active..." Foreground="{StaticResource PrimaryTextBrush}" FontSize="13" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </TabItem>
+            </TabControl>
         </Grid>
 
         <Border Grid.Row="2" Background="#1A5FB4" CornerRadius="8" Padding="16" Margin="0,24,0,0">
