@@ -96,7 +96,7 @@ The first code baseline is now in place:
 1. Add policy ingestion from WFP/WinDivert telemetry adapters into the core
    decision engine (process + host/IP + port).
 2. Build the first WinUI 3 shell (monitored apps view, recent egress, block/unblock).
-3. Add theming/branding integration using `p-potvin/vault-themes` as source of truth:
+3. Add theming/branding integration using `p-potvin/vaultwares-themes` as source of truth:
    - token references from `brand/tokens/tokens.ts`
    - bilingual copy parity from `brand/i18n/brand.i18n.ts`
    - logo and asset usage guidance from `assets/README.md` and `brand/brand-guide.md`
