@@ -68,6 +68,17 @@ public partial class RuleEditDialog : Window
             port = parsed;
         }
 
+        var remoteAddress = NullIfEmpty(RemoteAddressBox.Text);
+        if (remoteAddress != null &&
+            !System.Net.IPAddress.TryParse(remoteAddress, out _) &&
+            !System.Net.IPNetwork.TryParse(remoteAddress, out _))
+        {
+            MessageBox.Show(this,
+                "Remote Address must be a valid IP address or CIDR range (e.g. 192.168.1.1 or 192.168.1.0/24).",
+                "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
         var protocol = ProtocolBox.SelectedIndex switch
         {
             1 => TrafficProtocol.Tcp,
@@ -79,7 +90,7 @@ public partial class RuleEditDialog : Window
             Name: name,
             ProcessPath: NullIfEmpty(ProcessPathBox.Text),
             RemoteHost: NullIfEmpty(RemoteHostBox.Text),
-            RemoteAddress: NullIfEmpty(RemoteAddressBox.Text),
+            RemoteAddress: remoteAddress,
             RemotePort: port,
             Protocol: protocol,
             Block: BlockBox.IsChecked == true);

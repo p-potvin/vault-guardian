@@ -7,13 +7,16 @@ public class WindowsFirewallRuleApplierTests
 {
     private sealed class FakeProcessRunner : IProcessRunner
     {
-        public List<(string FileName, string Arguments)> Invocations { get; } = new();
+        public List<(string FileName, IReadOnlyList<string> Arguments)> Invocations { get; } = new();
         public int DefaultExitCode { get; set; } = 0;
+        public Func<string, IReadOnlyList<string>, int>? ExitCodeFor { get; set; }
 
-        public Task<int> RunAsync(string fileName, string arguments, CancellationToken cancellationToken = default)
+        public Task<int> RunAsync(string fileName, IEnumerable<string> arguments, CancellationToken cancellationToken = default)
         {
-            Invocations.Add((fileName, arguments));
-            return Task.FromResult(DefaultExitCode);
+            var argList = arguments.ToList();
+            Invocations.Add((fileName, argList));
+            var code = ExitCodeFor?.Invoke(fileName, argList) ?? DefaultExitCode;
+            return Task.FromResult(code);
         }
     }
 
@@ -37,12 +40,12 @@ public class WindowsFirewallRuleApplierTests
 
         await applier.ApplyAsync(new[] { rule });
 
-        var addCmd = runner.Invocations.Single(i => i.Arguments.Contains("add rule"));
+        var addCmd = runner.Invocations.Single(i => i.Arguments.Contains("add"));
         Assert.Equal("netsh", addCmd.FileName);
-        Assert.Contains("name=\"VG-block-vendor\"", addCmd.Arguments);
+        Assert.Contains("name=VG-block-vendor", addCmd.Arguments);
         Assert.Contains("dir=out", addCmd.Arguments);
         Assert.Contains("action=block", addCmd.Arguments);
-        Assert.Contains("program=\"C:\\Apps\\target.exe\"", addCmd.Arguments);
+        Assert.Contains(@"program=C:\Apps\target.exe", addCmd.Arguments);
         Assert.Contains("remoteip=203.0.113.10", addCmd.Arguments);
         Assert.Contains("remoteport=443", addCmd.Arguments);
         Assert.Contains("protocol=TCP", addCmd.Arguments);
@@ -56,7 +59,7 @@ public class WindowsFirewallRuleApplierTests
 
         await applier.ApplyAsync(new[] { rule });
 
-        Assert.DoesNotContain(runner.Invocations, i => i.Arguments.Contains("add rule"));
+        Assert.DoesNotContain(runner.Invocations, i => i.Arguments.Contains("add"));
     }
 
     [Fact]
@@ -67,7 +70,7 @@ public class WindowsFirewallRuleApplierTests
 
         await applier.ApplyAsync(new[] { rule });
 
-        Assert.DoesNotContain(runner.Invocations, i => i.Arguments.Contains("add rule"));
+        Assert.DoesNotContain(runner.Invocations, i => i.Arguments.Contains("add"));
     }
 
     [Fact]
@@ -78,7 +81,7 @@ public class WindowsFirewallRuleApplierTests
 
         await applier.ApplyAsync(new[] { rule });
 
-        Assert.DoesNotContain(runner.Invocations, i => i.Arguments.Contains("add rule"));
+        Assert.DoesNotContain(runner.Invocations, i => i.Arguments.Contains("add"));
     }
 
     [Fact]
@@ -89,7 +92,7 @@ public class WindowsFirewallRuleApplierTests
 
         await applier.ApplyAsync(new[] { rule });
 
-        var addCmd = runner.Invocations.Single(i => i.Arguments.Contains("add rule"));
+        var addCmd = runner.Invocations.Single(i => i.Arguments.Contains("add"));
         Assert.Contains("remoteip=192.168.1.0/24", addCmd.Arguments);
     }
 
@@ -101,10 +104,10 @@ public class WindowsFirewallRuleApplierTests
 
         await applier.ApplyAsync(new[] { rule });
 
-        var addCmd = runner.Invocations.Single(i => i.Arguments.Contains("add rule"));
-        Assert.Contains("program=\"C:\\App\\bad.exe\"", addCmd.Arguments);
-        Assert.DoesNotContain("remoteip=", addCmd.Arguments);
-        Assert.DoesNotContain("remoteport=", addCmd.Arguments);
+        var addCmd = runner.Invocations.Single(i => i.Arguments.Contains("add"));
+        Assert.Contains(@"program=C:\App\bad.exe", addCmd.Arguments);
+        Assert.DoesNotContain(addCmd.Arguments, a => a.StartsWith("remoteip="));
+        Assert.DoesNotContain(addCmd.Arguments, a => a.StartsWith("remoteport="));
     }
 
     [Fact]
@@ -122,8 +125,8 @@ public class WindowsFirewallRuleApplierTests
             new EgressRule("second", RemoteAddress: "2.2.2.2"),
         });
 
-        Assert.Contains(runner.Invocations, i => i.Arguments.Contains("delete rule name=\"VG-first\""));
-        Assert.Contains(runner.Invocations, i => i.Arguments.Contains("add rule") && i.Arguments.Contains("name=\"VG-second\""));
+        Assert.Contains(runner.Invocations, i => i.Arguments.Contains("delete") && i.Arguments.Contains("name=VG-first"));
+        Assert.Contains(runner.Invocations, i => i.Arguments.Contains("add") && i.Arguments.Contains("name=VG-second"));
     }
 
     [Fact]
@@ -134,7 +137,7 @@ public class WindowsFirewallRuleApplierTests
 
         await applier.ApplyAsync(new[] { rule });
 
-        var addCmd = runner.Invocations.Single(i => i.Arguments.Contains("add rule"));
+        var addCmd = runner.Invocations.Single(i => i.Arguments.Contains("add"));
         Assert.Contains("remoteport=8080", addCmd.Arguments);
         Assert.Contains("protocol=TCP", addCmd.Arguments);
     }
@@ -154,8 +157,8 @@ public class WindowsFirewallRuleApplierTests
             new EgressRule("svc", RemoteAddress: "2.2.2.2", RemotePort: 80, Protocol: TrafficProtocol.Tcp),
         });
 
-        var deleteIndex = runner.Invocations.FindIndex(i => i.Arguments.Contains("delete rule name=\"VG-svc\""));
-        var addIndex = runner.Invocations.FindIndex(i => i.Arguments.Contains("add rule") && i.Arguments.Contains("name=\"VG-svc\""));
+        var deleteIndex = runner.Invocations.FindIndex(i => i.Arguments.Contains("delete") && i.Arguments.Contains("name=VG-svc"));
+        var addIndex = runner.Invocations.FindIndex(i => i.Arguments.Contains("add") && i.Arguments.Contains("name=VG-svc"));
         Assert.True(deleteIndex >= 0);
         Assert.True(addIndex > deleteIndex);
     }
@@ -173,7 +176,34 @@ public class WindowsFirewallRuleApplierTests
 
         await applier.ClearAsync();
 
-        Assert.Contains(runner.Invocations, i => i.Arguments.Contains("delete rule name=\"VG-a\""));
-        Assert.Contains(runner.Invocations, i => i.Arguments.Contains("delete rule name=\"VG-b\""));
+        Assert.Contains(runner.Invocations, i => i.Arguments.Contains("delete") && i.Arguments.Contains("name=VG-a"));
+        Assert.Contains(runner.Invocations, i => i.Arguments.Contains("delete") && i.Arguments.Contains("name=VG-b"));
+    }
+
+    [Fact]
+    public async Task ApplyAsync_ThrowsWhenNetshAddFails()
+    {
+        var applier = Create(out var runner);
+        runner.ExitCodeFor = (_, args) => args.Contains("add") ? 1 : 0;
+        var rule = new EgressRule("fail", RemoteAddress: "1.1.1.1");
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => applier.ApplyAsync(new[] { rule }));
+    }
+
+    [Fact]
+    public async Task ApplyAsync_DoesNotInjectArgumentsViaRuleName()
+    {
+        var applier = Create(out var runner);
+        // A rule name containing what would be netsh argument separators must be passed
+        // as a single argument, not concatenated into multiple shell tokens.
+        var rule = new EgressRule(Name: "evil dir=in action=allow", RemoteAddress: "1.1.1.1");
+
+        await applier.ApplyAsync(new[] { rule });
+
+        var addCmd = runner.Invocations.Single(i => i.Arguments.Contains("add"));
+        Assert.Contains("name=VG-evil dir=in action=allow", addCmd.Arguments);
+        Assert.Equal(1, addCmd.Arguments.Count(a => a.StartsWith("dir=")));
+        Assert.Contains("dir=out", addCmd.Arguments);
+        Assert.DoesNotContain("dir=in", addCmd.Arguments);
     }
 }

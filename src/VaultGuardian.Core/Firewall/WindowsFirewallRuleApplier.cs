@@ -9,6 +9,7 @@ public sealed class WindowsFirewallRuleApplier : IFirewallRuleApplier
     private readonly IProcessRunner _runner;
     private readonly ILogger<WindowsFirewallRuleApplier> _logger;
     private readonly HashSet<string> _appliedNames = new(StringComparer.OrdinalIgnoreCase);
+    private readonly SemaphoreSlim _lock = new(1, 1);
 
     public WindowsFirewallRuleApplier(IProcessRunner runner, ILogger<WindowsFirewallRuleApplier> logger)
     {
@@ -18,55 +19,71 @@ public sealed class WindowsFirewallRuleApplier : IFirewallRuleApplier
 
     public async Task ApplyAsync(IEnumerable<EgressRule> rules, CancellationToken cancellationToken = default)
     {
-        var incoming = rules.ToList();
-        var incomingNames = incoming.Select(r => ManagedName(r.Name)).ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        var toDelete = new HashSet<string>(_appliedNames, StringComparer.OrdinalIgnoreCase);
-        toDelete.UnionWith(incomingNames);
-
-        foreach (var name in toDelete)
+        await _lock.WaitAsync(cancellationToken);
+        try
         {
-            var args = $"advfirewall firewall delete rule name=\"{name}\"";
-            await _runner.RunAsync("netsh", args, cancellationToken);
+            var incoming = rules.ToList();
+            var incomingNames = incoming.Select(r => ManagedName(r.Name)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var toDelete = new HashSet<string>(_appliedNames, StringComparer.OrdinalIgnoreCase);
+            toDelete.UnionWith(incomingNames);
+
+            foreach (var name in toDelete)
+            {
+                var args = new[] { "advfirewall", "firewall", "delete", "rule", $"name={name}" };
+                await _runner.RunAsync("netsh", args, cancellationToken);
+            }
+
+            _appliedNames.Clear();
+
+            foreach (var rule in incoming)
+            {
+                if (!rule.Block) continue;
+                if (!TryBuildAddArguments(rule, out var args, out var skipReason))
+                {
+                    _logger.LogDebug("Skipping rule '{Rule}': {Reason}", rule.Name, skipReason);
+                    continue;
+                }
+
+                var exitCode = await _runner.RunAsync("netsh", args, cancellationToken);
+                if (exitCode != 0)
+                {
+                    throw new InvalidOperationException(
+                        $"Failed to add firewall rule '{rule.Name}' (netsh exit code: {exitCode}). Ensure the app is running as Administrator.");
+                }
+
+                _appliedNames.Add(ManagedName(rule.Name));
+            }
         }
-
-        _appliedNames.Clear();
-
-        foreach (var rule in incoming)
+        finally
         {
-            if (!rule.Block) continue;
-            if (!TryBuildAddArguments(rule, out var args, out var skipReason))
-            {
-                _logger.LogDebug("Skipping rule '{Rule}': {Reason}", rule.Name, skipReason);
-                continue;
-            }
-
-            var exitCode = await _runner.RunAsync("netsh", args, cancellationToken);
-            if (exitCode != 0)
-            {
-                _logger.LogWarning("netsh add returned {Code} for rule '{Rule}'", exitCode, rule.Name);
-                continue;
-            }
-
-            _appliedNames.Add(ManagedName(rule.Name));
+            _lock.Release();
         }
     }
 
     public async Task ClearAsync(CancellationToken cancellationToken = default)
     {
-        foreach (var name in _appliedNames.ToArray())
+        await _lock.WaitAsync(cancellationToken);
+        try
         {
-            var args = $"advfirewall firewall delete rule name=\"{name}\"";
-            await _runner.RunAsync("netsh", args, cancellationToken);
+            foreach (var name in _appliedNames.ToArray())
+            {
+                var args = new[] { "advfirewall", "firewall", "delete", "rule", $"name={name}" };
+                await _runner.RunAsync("netsh", args, cancellationToken);
+            }
+            _appliedNames.Clear();
         }
-        _appliedNames.Clear();
+        finally
+        {
+            _lock.Release();
+        }
     }
 
     public static string ManagedName(string ruleName) => ManagedRulePrefix + ruleName;
 
-    internal static bool TryBuildAddArguments(EgressRule rule, out string arguments, out string? skipReason)
+    internal static bool TryBuildAddArguments(EgressRule rule, out List<string> arguments, out string? skipReason)
     {
-        arguments = string.Empty;
+        arguments = new List<string>();
         skipReason = null;
 
         var hasProgram = !string.IsNullOrWhiteSpace(rule.ProcessPath);
@@ -79,28 +96,28 @@ public sealed class WindowsFirewallRuleApplier : IFirewallRuleApplier
             return false;
         }
 
-        var parts = new List<string>
+        arguments.AddRange(new[]
         {
             "advfirewall", "firewall", "add", "rule",
-            $"name=\"{ManagedName(rule.Name)}\"",
+            $"name={ManagedName(rule.Name)}",
             "dir=out",
             "action=block",
             "enable=yes",
-        };
+        });
 
         if (hasProgram)
         {
-            parts.Add($"program=\"{rule.ProcessPath}\"");
+            arguments.Add($"program={rule.ProcessPath}");
         }
 
         if (hasRemoteIp)
         {
-            parts.Add($"remoteip={rule.RemoteAddress}");
+            arguments.Add($"remoteip={rule.RemoteAddress}");
         }
 
         if (hasRemotePort)
         {
-            parts.Add($"remoteport={rule.RemotePort!.Value}");
+            arguments.Add($"remoteport={rule.RemotePort!.Value}");
         }
 
         // netsh rejects remoteport when protocol=any; fall back to TCP in that case.
@@ -109,9 +126,8 @@ public sealed class WindowsFirewallRuleApplier : IFirewallRuleApplier
         {
             protocol = TrafficProtocol.Tcp;
         }
-        parts.Add($"protocol={ProtocolToken(protocol)}");
+        arguments.Add($"protocol={ProtocolToken(protocol)}");
 
-        arguments = string.Join(' ', parts);
         return true;
     }
 

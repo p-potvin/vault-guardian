@@ -15,8 +15,6 @@ public partial class App : Application
 {
     public static IServiceProvider? ServiceProvider { get; private set; }
 
-    private IInterceptor? _interceptor;
-
     protected override async void OnStartup(StartupEventArgs e)
     {
         this.ShutdownMode = ShutdownMode.OnExplicitShutdown;
@@ -45,11 +43,11 @@ public partial class App : Application
             logger.LogError(ex, "Failed to apply firewall rules at startup");
         }
 
-        // Start Interceptor
-        _interceptor = ServiceProvider.GetRequiredService<IInterceptor>();
+        // Start Interceptor (lifetime managed by the DI container)
+        var interceptor = ServiceProvider.GetRequiredService<IInterceptor>();
         try
         {
-            await _interceptor.StartAsync(CancellationToken.None);
+            await interceptor.StartAsync(CancellationToken.None);
         }
         catch (Exception ex)
         {
@@ -112,11 +110,18 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        // ServiceProvider disposal cascades to singletons (incl. IInterceptor's
+        // IAsyncDisposable). Sync Dispose() throws when a singleton is async-only,
+        // so prefer DisposeAsync where available.
         try
         {
-            if (_interceptor != null)
+            if (ServiceProvider is IAsyncDisposable asyncDisposable)
             {
-                _interceptor.DisposeAsync().AsTask().GetAwaiter().GetResult();
+                asyncDisposable.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            }
+            else if (ServiceProvider is IDisposable disposable)
+            {
+                disposable.Dispose();
             }
         }
         catch
@@ -124,10 +129,6 @@ public partial class App : Application
             // best-effort shutdown — don't block app exit on cleanup failures
         }
 
-        if (ServiceProvider is IDisposable disposable)
-        {
-            disposable.Dispose();
-        }
         base.OnExit(e);
     }
 }
