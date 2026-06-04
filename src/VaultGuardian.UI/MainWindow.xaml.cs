@@ -1,15 +1,8 @@
 ﻿using System.Text;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
+using VaultGuardian.Core;
 using VaultGuardian.Core.Observability;
 using H.NotifyIcon;
 
@@ -22,14 +15,15 @@ public partial class MainWindow : Window
 {
     private readonly LiveMonitorService _monitor;
     private readonly OverlayWindow _overlay;
+    private readonly AppSettings _settings;
     private readonly DispatcherTimer _timer;
     private readonly TaskbarIcon? _trayIcon;
 
-    public MainWindow(LiveMonitorService monitor, OverlayWindow overlay)
+    public MainWindow(LiveMonitorService monitor, OverlayWindow overlay, AppSettings settings)
     {
-        // Assign dependencies first
         _monitor = monitor;
         _overlay = overlay;
+        _settings = settings;
 
         InitializeComponent();
 
@@ -37,16 +31,26 @@ public partial class MainWindow : Window
 
         _timer = new DispatcherTimer
         {
-            Interval = TimeSpan.FromSeconds(1)
+            Interval = TimeSpan.FromMilliseconds(_settings.RefreshIntervalMs)
         };
         _timer.Tick += OnTick;
         _timer.Start();
 
-        // Note: _overlay.Show() may now be redundant if the CheckBox 
-        // triggers it during InitializeComponent, but calling it 
-        // again is safe in WPF.
-        _overlay.Show();
+        _settings.Changed += OnSettingsChanged;
+
+        if (_settings.ShowOverlayOnStart)
+        {
+            ShowOverlayCheckbox.IsChecked = true;
+            _overlay.Show();
+        }
+        else
+        {
+            ShowOverlayCheckbox.IsChecked = false;
+        }
     }
+
+    private void OnSettingsChanged(object? sender, EventArgs e)
+        => _timer.Interval = TimeSpan.FromMilliseconds(_settings.RefreshIntervalMs);
 
     private void OnTick(object? sender, EventArgs e)
     {
@@ -158,8 +162,10 @@ public partial class MainWindow : Window
 
     protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
     {
-        // Minimize to tray instead of closing
-        e.Cancel = true;
-        this.Hide();
+        if (_settings.MinimizeToTrayOnClose)
+        {
+            e.Cancel = true;
+            this.Hide();
+        }
     }
 }
