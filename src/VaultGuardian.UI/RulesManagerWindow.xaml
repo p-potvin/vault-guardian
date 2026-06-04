@@ -20,7 +20,8 @@
 
         <TextBlock Text="Firewall Rules" FontSize="24" FontWeight="Bold" Margin="0,0,0,20"/>
 
-        <ListView x:Name="RulesList" Grid.Row="1" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}" Foreground="White">
+        <ListView x:Name="RulesList" Grid.Row="1" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}" Foreground="White"
+                  MouseDoubleClick="OnRulesListDoubleClick">
             <ListView.View>
                 <GridView>
                     <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}" Width="150"/>
@@ -41,6 +42,7 @@
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
             <Button Content="Add Rule" Click="OnAddRuleClick" Padding="15,8" Margin="0,0,10,0" Background="{StaticResource AccentBrush}" Foreground="White" BorderThickness="0"/>
+            <Button Content="Edit Selected" Click="OnEditRuleClick" Padding="15,8" Margin="0,0,10,0" Background="{StaticResource CardHoverBrush}" Foreground="White" BorderThickness="0"/>
             <Button Content="Remove Selected" Click="OnRemoveRuleClick" Padding="15,8" Background="{StaticResource ErrorBrush}" Foreground="White" BorderThickness="0"/>
         </StackPanel>
     </Grid>

@@ -1,0 +1,62 @@
+<Window x:Class="VaultGuardian.UI.RuleEditDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Egress Rule" Height="520" Width="520"
+        Background="{StaticResource BackgroundBrush}"
+        Foreground="{StaticResource PrimaryTextBrush}"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Egress Rule" FontSize="20" FontWeight="Bold" Margin="0,0,0,16"/>
+
+        <StackPanel Grid.Row="1">
+            <TextBlock Text="Name" Foreground="{StaticResource SecondaryTextBrush}" Margin="0,0,0,4"/>
+            <TextBox x:Name="NameBox" Margin="0,0,0,12" Padding="6"/>
+
+            <TextBlock Text="Process Path (optional)" Foreground="{StaticResource SecondaryTextBrush}" Margin="0,0,0,4"/>
+            <DockPanel Margin="0,0,0,12">
+                <Button Content="Browse..." DockPanel.Dock="Right" Click="OnBrowseClick" Padding="10,6" Margin="6,0,0,0"/>
+                <TextBox x:Name="ProcessPathBox" Padding="6"/>
+            </DockPanel>
+
+            <TextBlock Text="Remote Address or CIDR (optional)" Foreground="{StaticResource SecondaryTextBrush}" Margin="0,0,0,4"/>
+            <TextBox x:Name="RemoteAddressBox" Margin="0,0,0,12" Padding="6"/>
+
+            <TextBlock Text="Remote Host (optional; in-app matching only)" Foreground="{StaticResource SecondaryTextBrush}" Margin="0,0,0,4"/>
+            <TextBox x:Name="RemoteHostBox" Margin="0,0,0,12" Padding="6"/>
+
+            <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="Remote Port (optional)" Foreground="{StaticResource SecondaryTextBrush}" Margin="0,0,0,4"/>
+                    <TextBox x:Name="RemotePortBox" Padding="6"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="Protocol" Foreground="{StaticResource SecondaryTextBrush}" Margin="0,0,0,4"/>
+                    <ComboBox x:Name="ProtocolBox" Padding="6">
+                        <ComboBoxItem Content="Any" IsSelected="True"/>
+                        <ComboBoxItem Content="Tcp"/>
+                        <ComboBoxItem Content="Udp"/>
+                    </ComboBox>
+                </StackPanel>
+            </Grid>
+
+            <CheckBox x:Name="BlockBox" Content="Block matching traffic" IsChecked="True" Foreground="{StaticResource PrimaryTextBrush}"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="Cancel" Click="OnCancelClick" Padding="15,8" Margin="0,0,10,0"/>
+            <Button Content="Save" Click="OnSaveClick" Padding="15,8" Background="{StaticResource AccentBrush}" Foreground="White" BorderThickness="0"/>
+        </StackPanel>
+    </Grid>
+</Window>
