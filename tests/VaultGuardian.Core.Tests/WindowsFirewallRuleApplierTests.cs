@@ -182,6 +182,27 @@ public class WindowsFirewallRuleApplierTests
     }
 
     [Fact]
+    public async Task ApplyAsync_PersistsAlreadyAppliedRulesEvenIfLaterRuleFails()
+    {
+        var applier = Create(out var runner, out var sf);
+        // Fail only when adding "bad" — "good" succeeds first and must end up in the state file.
+        runner.ExitCodeFor = (_, args) =>
+            args.Contains("add") && args.Contains("name=VG-bad") ? 1 : 0;
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => applier.ApplyAsync(new[]
+        {
+            new EgressRule("good", RemoteAddress: "1.1.1.1", IsPersistent: true),
+            new EgressRule("bad", RemoteAddress: "2.2.2.2", IsPersistent: true),
+        }));
+
+        Assert.True(File.Exists(sf));
+        var json = await File.ReadAllTextAsync(sf);
+        Assert.Contains("VG-good", json);
+        Assert.DoesNotContain("VG-bad", json);
+        File.Delete(sf);
+    }
+
+    [Fact]
     public async Task ApplyAsync_DoesNotInjectArgumentsViaRuleName()
     {
         var applier = Create(out var runner, out var sf);

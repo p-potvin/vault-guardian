@@ -113,10 +113,11 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         // Clear session-only firewall rules before tearing down the container.
+        // Wrap in Task.Run to avoid a sync-over-async deadlock on the WPF UI thread.
         try
         {
             if (ServiceProvider?.GetService(typeof(IFirewallRuleApplier)) is IFirewallRuleApplier firewall)
-                firewall.ClearSessionRulesAsync().GetAwaiter().GetResult();
+                Task.Run(() => firewall.ClearSessionRulesAsync()).GetAwaiter().GetResult();
         }
         catch
         {
