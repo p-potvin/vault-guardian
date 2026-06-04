@@ -32,10 +32,12 @@ public partial class App : Application
             engine.UpdateRules(loadedRules);
         }
 
-        // Push rules to Windows Firewall (best-effort: missing admin shouldn't kill the UI)
+        // Clean up any rules left in the Windows Firewall from the previous session,
+        // then re-apply the current rule set (persistent rules will be reinstated).
         var firewall = ServiceProvider.GetRequiredService<IFirewallRuleApplier>();
         try
         {
+            await firewall.CleanupPreviousSessionAsync();
             await firewall.ApplyAsync(engine.Rules);
         }
         catch (Exception ex)
@@ -110,6 +112,18 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        // Clear session-only firewall rules before tearing down the container.
+        // Wrap in Task.Run to avoid a sync-over-async deadlock on the WPF UI thread.
+        try
+        {
+            if (ServiceProvider?.GetService(typeof(IFirewallRuleApplier)) is IFirewallRuleApplier firewall)
+                Task.Run(() => firewall.ClearSessionRulesAsync()).GetAwaiter().GetResult();
+        }
+        catch
+        {
+            // best-effort — don't block exit on firewall failures
+        }
+
         // ServiceProvider disposal cascades to singletons (incl. IInterceptor's
         // IAsyncDisposable). Sync Dispose() throws when a singleton is async-only,
         // so prefer DisposeAsync where available.

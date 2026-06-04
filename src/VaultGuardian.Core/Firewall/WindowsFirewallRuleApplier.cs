@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 
 namespace VaultGuardian.Core.Firewall;
@@ -5,36 +6,68 @@ namespace VaultGuardian.Core.Firewall;
 public sealed class WindowsFirewallRuleApplier : IFirewallRuleApplier
 {
     public const string ManagedRulePrefix = "VG-";
+    public const string StateFileName = "firewall-state.json";
 
     private readonly IProcessRunner _runner;
     private readonly ILogger<WindowsFirewallRuleApplier> _logger;
-    private readonly HashSet<string> _appliedNames = new(StringComparer.OrdinalIgnoreCase);
+    private readonly string _stateFilePath;
     private readonly SemaphoreSlim _lock = new(1, 1);
 
+    // Tracked separately so ClearSessionRulesAsync only touches session rules.
+    private readonly HashSet<string> _persistentApplied = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _sessionApplied = new(StringComparer.OrdinalIgnoreCase);
+
     public WindowsFirewallRuleApplier(IProcessRunner runner, ILogger<WindowsFirewallRuleApplier> logger)
+        : this(runner, logger, Path.Combine(AppDomain.CurrentDomain.BaseDirectory, StateFileName)) { }
+
+    internal WindowsFirewallRuleApplier(IProcessRunner runner, ILogger<WindowsFirewallRuleApplier> logger, string stateFilePath)
     {
         _runner = runner;
         _logger = logger;
+        _stateFilePath = stateFilePath;
+    }
+
+    public async Task CleanupPreviousSessionAsync(CancellationToken cancellationToken = default)
+    {
+        await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var previousNames = await LoadStateAsync(cancellationToken).ConfigureAwait(false);
+            foreach (var name in previousNames)
+            {
+                await DeleteRuleAsync(name, cancellationToken).ConfigureAwait(false);
+            }
+
+            SaveState([]);
+        }
+        finally
+        {
+            _lock.Release();
+        }
     }
 
     public async Task ApplyAsync(IEnumerable<EgressRule> rules, CancellationToken cancellationToken = default)
     {
-        await _lock.WaitAsync(cancellationToken);
+        await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var incoming = rules.ToList();
-            var incomingNames = incoming.Select(r => ManagedName(r.Name)).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            var toDelete = new HashSet<string>(_appliedNames, StringComparer.OrdinalIgnoreCase);
-            toDelete.UnionWith(incomingNames);
+            // Delete all currently tracked rules (persistent + session).
+            var allTracked = new HashSet<string>(_persistentApplied, StringComparer.OrdinalIgnoreCase);
+            allTracked.UnionWith(_sessionApplied);
 
-            foreach (var name in toDelete)
+            // Also pre-delete incoming names in case they appear under different tracking.
+            var incomingNames = incoming.Select(r => ManagedName(r.Name));
+            allTracked.UnionWith(incomingNames);
+
+            foreach (var name in allTracked)
             {
-                var args = new[] { "advfirewall", "firewall", "delete", "rule", $"name={name}" };
-                await _runner.RunAsync("netsh", args, cancellationToken);
+                await DeleteRuleAsync(name, cancellationToken).ConfigureAwait(false);
             }
 
-            _appliedNames.Clear();
+            _persistentApplied.Clear();
+            _sessionApplied.Clear();
 
             foreach (var rule in incoming)
             {
@@ -45,33 +78,62 @@ public sealed class WindowsFirewallRuleApplier : IFirewallRuleApplier
                     continue;
                 }
 
-                var exitCode = await _runner.RunAsync("netsh", args, cancellationToken);
+                var exitCode = await _runner.RunAsync("netsh", args, cancellationToken).ConfigureAwait(false);
                 if (exitCode != 0)
                 {
                     throw new InvalidOperationException(
                         $"Failed to add firewall rule '{rule.Name}' (netsh exit code: {exitCode}). Ensure the app is running as Administrator.");
                 }
 
-                _appliedNames.Add(ManagedName(rule.Name));
+                var managedName = ManagedName(rule.Name);
+                if (rule.IsPersistent)
+                    _persistentApplied.Add(managedName);
+                else
+                    _sessionApplied.Add(managedName);
             }
         }
         finally
         {
+            // Always persist whatever we successfully added — even on partial failure, so
+            // the next startup can clean up any rules already in the firewall.
+            SaveState(_persistentApplied);
+            _lock.Release();
+        }
+    }
+
+    public async Task ClearSessionRulesAsync(CancellationToken cancellationToken = default)
+    {
+        await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            foreach (var name in _sessionApplied.ToArray())
+            {
+                await DeleteRuleAsync(name, cancellationToken).ConfigureAwait(false);
+            }
+            _sessionApplied.Clear();
+        }
+        finally
+        {
+            SaveState(_persistentApplied);
             _lock.Release();
         }
     }
 
     public async Task ClearAsync(CancellationToken cancellationToken = default)
     {
-        await _lock.WaitAsync(cancellationToken);
+        await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            foreach (var name in _appliedNames.ToArray())
+            var all = _persistentApplied.Concat(_sessionApplied).ToArray();
+            foreach (var name in all)
             {
-                var args = new[] { "advfirewall", "firewall", "delete", "rule", $"name={name}" };
-                await _runner.RunAsync("netsh", args, cancellationToken);
+                await DeleteRuleAsync(name, cancellationToken).ConfigureAwait(false);
             }
-            _appliedNames.Clear();
+            _persistentApplied.Clear();
+            _sessionApplied.Clear();
+
+            if (File.Exists(_stateFilePath))
+                File.Delete(_stateFilePath);
         }
         finally
         {
@@ -106,29 +168,57 @@ public sealed class WindowsFirewallRuleApplier : IFirewallRuleApplier
         });
 
         if (hasProgram)
-        {
             arguments.Add($"program={rule.ProcessPath}");
-        }
 
         if (hasRemoteIp)
-        {
             arguments.Add($"remoteip={rule.RemoteAddress}");
-        }
 
         if (hasRemotePort)
-        {
             arguments.Add($"remoteport={rule.RemotePort!.Value}");
-        }
 
         // netsh rejects remoteport when protocol=any; fall back to TCP in that case.
         var protocol = rule.Protocol;
         if (hasRemotePort && protocol == TrafficProtocol.Any)
-        {
             protocol = TrafficProtocol.Tcp;
-        }
-        arguments.Add($"protocol={ProtocolToken(protocol)}");
 
+        arguments.Add($"protocol={ProtocolToken(protocol)}");
         return true;
+    }
+
+    private async Task DeleteRuleAsync(string managedName, CancellationToken cancellationToken)
+    {
+        var args = new[] { "advfirewall", "firewall", "delete", "rule", $"name={managedName}" };
+        await _runner.RunAsync("netsh", args, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<List<string>> LoadStateAsync(CancellationToken cancellationToken)
+    {
+        if (!File.Exists(_stateFilePath)) return [];
+        try
+        {
+            await using var stream = File.OpenRead(_stateFilePath);
+            return await JsonSerializer.DeserializeAsync<List<string>>(stream, cancellationToken: cancellationToken)
+                .ConfigureAwait(false) ?? [];
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to read firewall state file; treating as empty");
+            return [];
+        }
+    }
+
+    private void SaveState(IEnumerable<string> names)
+    {
+        try
+        {
+            var list = names.ToList();
+            var json = JsonSerializer.Serialize(list, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(_stateFilePath, json);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to write firewall state file");
+        }
     }
 
     private static string ProtocolToken(TrafficProtocol protocol) => protocol switch

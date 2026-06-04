@@ -30,6 +30,7 @@ public partial class RuleEditDialog : Window
             _ => 0,
         };
         BlockBox.IsChecked = rule.Block;
+        PersistentBox.IsChecked = rule.IsPersistent;
     }
 
     private void OnBrowseClick(object sender, RoutedEventArgs e)
@@ -93,7 +94,8 @@ public partial class RuleEditDialog : Window
             RemoteAddress: remoteAddress,
             RemotePort: port,
             Protocol: protocol,
-            Block: BlockBox.IsChecked == true);
+            Block: BlockBox.IsChecked == true,
+            IsPersistent: PersistentBox.IsChecked == true);
 
         DialogResult = true;
     }

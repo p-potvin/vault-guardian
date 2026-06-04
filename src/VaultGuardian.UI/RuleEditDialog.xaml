@@ -1,7 +1,7 @@
 <Window x:Class="VaultGuardian.UI.RuleEditDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Egress Rule" Height="520" Width="520"
+        Title="Egress Rule" Height="560" Width="520"
         Background="{StaticResource BackgroundBrush}"
         Foreground="{StaticResource PrimaryTextBrush}"
         WindowStartupLocation="CenterOwner"
@@ -51,7 +51,8 @@
                 </StackPanel>
             </Grid>
 
-            <CheckBox x:Name="BlockBox" Content="Block matching traffic" IsChecked="True" Foreground="{StaticResource PrimaryTextBrush}"/>
+            <CheckBox x:Name="BlockBox" Content="Block matching traffic" IsChecked="True" Foreground="{StaticResource PrimaryTextBrush}" Margin="0,0,0,8"/>
+            <CheckBox x:Name="PersistentBox" Content="Persist rule across restarts (uncheck for session-only)" IsChecked="True" Foreground="{StaticResource SecondaryTextBrush}"/>
         </StackPanel>
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
