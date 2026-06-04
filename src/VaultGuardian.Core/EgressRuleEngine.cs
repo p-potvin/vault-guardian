@@ -30,7 +30,8 @@ public sealed record EgressRule(
     string? RemoteAddress = null,
     int? RemotePort = null,
     TrafficProtocol Protocol = TrafficProtocol.Any,
-    bool Block = true)
+    bool Block = true,
+    bool IsPersistent = true)
 {
     public bool Matches(TrafficObservation observation)
     {

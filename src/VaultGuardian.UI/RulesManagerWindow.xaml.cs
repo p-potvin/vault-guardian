@@ -105,3 +105,19 @@ public class BlockToColorConverter : IValueConverter
     public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         => throw new NotImplementedException();
 }
+
+public class PersistentToTextConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        => (bool)value ? "Persistent" : "Session";
+    public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        => throw new NotImplementedException();
+}
+
+public class PersistentToColorConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        => (bool)value ? Brushes.White : new SolidColorBrush(Color.FromRgb(0xA0, 0xA0, 0xA0));
+    public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        => throw new NotImplementedException();
+}
