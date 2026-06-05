@@ -18,6 +18,12 @@ internal static partial class CuptiInterop
         CuptiBufferAllocCallback bufferAlloc,
         CuptiBufferRequestCallback bufferRequest);
 
+    [DllImport(CuptiLib, CallingConvention = CallingConvention.Cdecl)]
+    public static extern CuptiResult cuptiActivityFlushAll(uint flag);
+
+    [DllImport(CuptiLib, CallingConvention = CallingConvention.Cdecl)]
+    public static extern CuptiResult cuptiActivityGetNextRecord(IntPtr buffer, uint validBufferSizeBytes, out IntPtr record);
+
     public enum CuptiResult
     {
         CUPTI_SUCCESS = 0,

@@ -18,8 +18,9 @@ public partial class App : Application
     protected override async void OnStartup(StartupEventArgs e)
     {
         this.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+        var settings = AppSettingsLoader.Load();
         var services = new ServiceCollection();
-        ConfigureServices(services);
+        ConfigureServices(services, settings);
         ServiceProvider = services.BuildServiceProvider();
 
         var logger = ServiceProvider.GetRequiredService<ILogger<App>>();
@@ -63,11 +64,11 @@ public partial class App : Application
         base.OnStartup(e);
     }
 
-    private void ConfigureServices(IServiceCollection services)
+    private static void ConfigureServices(IServiceCollection services, AppSettings settings)
     {
         services.AddLogging(builder => builder.AddConsole());
 
-        // Rules - loading an empty list for now or from a default file
+        services.AddSingleton(settings);
         services.AddSingleton(new RuleDecisionEngine([]));
 
         services.AddSingleton<TrafficStats>();
@@ -81,6 +82,7 @@ public partial class App : Application
         services.AddSingleton<MainWindow>();
         services.AddSingleton<OverlayWindow>();
         services.AddTransient<RulesManagerWindow>();
+        services.AddTransient<SettingsWindow>();
     }
 
     private void ShowMainWindow_Click(object sender, RoutedEventArgs e)
@@ -102,7 +104,10 @@ public partial class App : Application
 
     private void Settings_Click(object sender, RoutedEventArgs e)
     {
-        MessageBox.Show("Settings module coming soon.", "Settings", MessageBoxButton.OK, MessageBoxImage.Information);
+        var window = ServiceProvider?.GetRequiredService<SettingsWindow>();
+        if (window == null) return;
+        window.Owner = ServiceProvider?.GetService<MainWindow>();
+        window.ShowDialog();
     }
 
     private void ExitApp_Click(object sender, RoutedEventArgs e)
