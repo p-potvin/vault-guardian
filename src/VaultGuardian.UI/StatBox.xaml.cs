@@ -1,5 +1,6 @@
-using System.Windows.Media;
-using System.Windows.Controls;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
+using Windows.UI;
 
 namespace VaultGuardian.UI;
 

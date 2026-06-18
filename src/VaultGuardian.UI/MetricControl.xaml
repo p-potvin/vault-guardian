@@ -1,13 +1,19 @@
-<UserControl x:Class="VaultGuardian.UI.MetricControl"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <StackPanel Margin="0,0,0,0">
+<UserControl
+    x:Class="VaultGuardian.UI.MetricControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel>
         <Grid Margin="0,0,0,8">
-            <TextBlock x:Name="LabelText" Text="Usage" FontSize="14" Foreground="{StaticResource SecondaryTextBrush}"/>
-            <TextBlock x:Name="ValueText" Text="0.0%" HorizontalAlignment="Right" FontWeight="Bold" FontSize="14" Foreground="{StaticResource PrimaryTextBrush}"/>
+            <TextBlock x:Name="LabelText" Text="Usage" FontSize="14"
+                       Foreground="{StaticResource SecondaryTextBrush}"/>
+            <TextBlock x:Name="ValueText" Text="0.0%" HorizontalAlignment="Right"
+                       FontWeight="Bold" FontSize="14"
+                       FontFamily="{StaticResource VaultMonoFontFamily}"
+                       Foreground="{StaticResource PrimaryTextBrush}"/>
         </Grid>
         <Border Background="#1AFFFFFF" CornerRadius="3" Height="6">
-            <ProgressBar x:Name="Bar" Height="6" Minimum="0" Maximum="100" BorderThickness="0" Background="Transparent"/>
+            <ProgressBar x:Name="Bar" Height="6" Minimum="0" Maximum="100"
+                         Background="Transparent" CornerRadius="3"/>
         </Border>
     </StackPanel>
 </UserControl>

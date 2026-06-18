@@ -1,59 +1,51 @@
-﻿using System.Text;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using System.Windows.Threading;
-using Microsoft.Extensions.DependencyInjection;
-using VaultGuardian.Core.Observability;
+using System;
+using System.Text;
+using System.Threading.Tasks;
 using H.NotifyIcon;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Dispatching;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using VaultGuardian.Core.Observability;
 
 namespace VaultGuardian.UI;
 
-/// <summary>
-/// Interaction logic for MainWindow.xaml
-/// </summary>
-public partial class MainWindow : Window
+public sealed partial class MainWindow : Window
 {
     private readonly LiveMonitorService _monitor;
     private readonly OverlayWindow _overlay;
-    private readonly DispatcherTimer _timer;
-    private readonly TaskbarIcon? _trayIcon;
+    private readonly AppSettings _settings;
+    private readonly DispatcherQueueTimer _timer;
 
-    public MainWindow(LiveMonitorService monitor, OverlayWindow overlay)
+    public MainWindow(LiveMonitorService monitor, OverlayWindow overlay, AppSettings settings)
     {
-        // Assign dependencies first
         _monitor = monitor;
         _overlay = overlay;
+        _settings = settings;
 
         InitializeComponent();
+        Title = "VaultGuardian";
 
-        _trayIcon = Application.Current.FindResource("NotifyIcon") as TaskbarIcon;
-
-        _timer = new DispatcherTimer
-        {
-            Interval = TimeSpan.FromSeconds(1)
-        };
+        _timer = DispatcherQueue.CreateTimer();
+        _timer.Interval = TimeSpan.FromMilliseconds(_settings.RefreshRateMs);
         _timer.Tick += OnTick;
         _timer.Start();
 
-        // Note: _overlay.Show() may now be redundant if the CheckBox 
-        // triggers it during InitializeComponent, but calling it 
-        // again is safe in WPF.
-        _overlay.Show();
+        _settings.Changed += OnSettingsChanged;
+
+        _overlay.Activate();
+        Closed += OnWindowClosed;
     }
 
-    private void OnTick(object? sender, EventArgs e)
+    private void OnSettingsChanged(object? sender, EventArgs e)
+    {
+        _timer.Interval = TimeSpan.FromMilliseconds(Math.Max(100, _settings.RefreshRateMs));
+    }
+
+    private void OnTick(DispatcherQueueTimer sender, object args)
     {
         var metrics = _monitor.GetLatestMetrics();
 
-        // --- Tab 1: Dashboard Updates ---
-        // Network
         double sentMbps = (metrics.Traffic.TotalBytesSent * 8.0) / 1024 / 1024;
         double recvMbps = (metrics.Traffic.TotalBytesRecv * 8.0) / 1024 / 1024;
         TrafficSentMetric.Update(Math.Min(100, sentMbps), $"{sentMbps:F1} Mbps");
@@ -62,22 +54,19 @@ public partial class MainWindow : Window
         TotalStats.Update(metrics.Traffic.TotalPackets);
         BlockedStats.Update(metrics.Traffic.BlockedPackets);
 
-        // Disk
         double readMb = metrics.Resources.DiskReadBytesPerSec / 1024 / 1024;
         double writeMb = metrics.Resources.DiskWriteBytesPerSec / 1024 / 1024;
-        DiskReadMetric.Update(Math.Min(100, readMb / 5), $"{readMb:F1} MB/s"); // Normalized to 500MB/s base
+        DiskReadMetric.Update(Math.Min(100, readMb / 5), $"{readMb:F1} MB/s");
         DiskWriteMetric.Update(Math.Min(100, writeMb / 5), $"{writeMb:F1} MB/s");
 
         DiskQueueText.Text = metrics.Resources.DiskQueueLength.ToString();
         DiskActiveText.Text = $"{metrics.Resources.DiskActiveTimePercentage:F0}%";
 
-        // Details Panel (Update only if visible)
         if (DetailsPopup.Visibility == Visibility.Visible)
         {
             UpdateDetailedSubsystemInfo(metrics);
         }
 
-        // --- Tab 2: Performance Info Updates ---
         CpuDetailed.Update(metrics.Resources.CpuUsagePercentage, $"{metrics.Resources.CpuUsagePercentage:F1}%");
 
         double totalRam = metrics.Resources.RamUsageBytes + metrics.Resources.RamAvailableBytes;
@@ -104,16 +93,11 @@ public partial class MainWindow : Window
                                   $"Allowed Packets: {metrics.Traffic.AllowedPackets}\n" +
                                   $"Blocked Packets: {metrics.Traffic.BlockedPackets}";
 
-        // Update Overlay
-        if (_overlay.IsVisible)
-        {
-            _overlay.UpdateMetrics(metrics);
-        }
+        _overlay.UpdateMetrics(metrics);
 
-        // Update Tray Tooltip
-        if (_trayIcon != null)
+        if (App.TrayIcon != null)
         {
-            _trayIcon.ToolTipText = $"VG Monitoring\nTraffic: {sentMbps:F1} Mbps Out\nDisk Load: {metrics.Resources.DiskActiveTimePercentage:F0}%";
+            App.TrayIcon.ToolTipText = $"VG Monitoring\nTraffic: {sentMbps:F1} Mbps Out\nDisk Load: {metrics.Resources.DiskActiveTimePercentage:F0}%";
         }
     }
 
@@ -135,31 +119,52 @@ public partial class MainWindow : Window
 
     private void OnToggleDetailsClick(object sender, RoutedEventArgs e)
     {
-        DetailsPopup.Visibility = DetailsPopup.Visibility == Visibility.Visible 
-            ? Visibility.Collapsed 
+        DetailsPopup.Visibility = DetailsPopup.Visibility == Visibility.Visible
+            ? Visibility.Collapsed
             : Visibility.Visible;
     }
 
     private void OnOverlayToggled(object sender, RoutedEventArgs e)
     {
-        if (ShowOverlayCheckbox.IsChecked == true) _overlay.Show();
-        else _overlay.Hide();
+        if (ShowOverlayCheckbox.IsChecked == true) _overlay.Activate();
+        else _overlay.HideOverlay();
     }
 
-    private void OnManageRulesClick(object sender, RoutedEventArgs e)
+    private async void OnManageRulesClick(object sender, RoutedEventArgs e)
     {
         var rulesWindow = App.ServiceProvider?.GetRequiredService<RulesManagerWindow>();
         if (rulesWindow != null)
         {
-            rulesWindow.Owner = this;
-            rulesWindow.ShowDialog();
+            rulesWindow.Activate();
+        }
+        await Task.CompletedTask;
+    }
+
+    public async Task ShowSettingsAsync()
+    {
+        try { this.Activate(); } catch { }
+        if (Content is not FrameworkElement root || root.XamlRoot == null) return;
+        try
+        {
+            var dialog = new SettingsDialog(_settings) { XamlRoot = root.XamlRoot };
+            await dialog.ShowAsync();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[VaultGuardian] ShowSettingsAsync failed: {ex}");
         }
     }
 
-    protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+    private void OnWindowClosed(object sender, WindowEventArgs args)
     {
-        // Minimize to tray instead of closing
-        e.Cancel = true;
-        this.Hide();
+        _timer.Stop();
+        _settings.Changed -= OnSettingsChanged;
+
+        if (_settings.MinimizeToTrayOnClose)
+        {
+            // Hide rather than fully close — re-show via tray.
+            // WinUI 3 doesn't surface a clean cancel on Closed, so the consumer
+            // hides on click instead via the AppWindow presenter.
+        }
     }
 }

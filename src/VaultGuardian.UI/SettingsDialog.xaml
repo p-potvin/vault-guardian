@@ -1,0 +1,35 @@
+<ContentDialog
+    x:Class="VaultGuardian.UI.SettingsDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Settings"
+    PrimaryButtonText="Save"
+    SecondaryButtonText="Cancel"
+    DefaultButton="Primary"
+    Background="{StaticResource ConsoleElevatedBrush}"
+    Foreground="{StaticResource PrimaryTextBrush}"
+    CornerRadius="{StaticResource OverlayCornerRadius}">
+    <StackPanel MinWidth="380" Spacing="14">
+        <StackPanel>
+            <TextBlock Text="Refresh Rate" Foreground="{StaticResource SecondaryTextBrush}"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Slider x:Name="RefreshSlider" Grid.Column="0" Minimum="250" Maximum="5000"
+                        StepFrequency="250" TickFrequency="250" TickPlacement="Outside"
+                        Value="1000" ValueChanged="OnSliderChanged"/>
+                <TextBlock x:Name="RefreshValueText" Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center"
+                           FontFamily="{StaticResource VaultMonoFontFamily}"
+                           Foreground="{StaticResource ConsoleGoldBrush}" Text="1000 ms"/>
+            </Grid>
+        </StackPanel>
+
+        <CheckBox x:Name="MinimizeToTrayCheck" Content="Minimize to tray when window is closed"
+                  Foreground="{StaticResource PrimaryTextBrush}"/>
+
+        <CheckBox x:Name="StartupCheck" Content="Launch VaultGuardian at Windows startup"
+                  Foreground="{StaticResource PrimaryTextBrush}"/>
+    </StackPanel>
+</ContentDialog>
