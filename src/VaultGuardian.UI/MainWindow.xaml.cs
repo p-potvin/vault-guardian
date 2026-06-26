@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using VaultGuardian.Core;
 using VaultGuardian.Core.Observability;
 
 namespace VaultGuardian.UI;
@@ -27,19 +28,28 @@ public sealed partial class MainWindow : Window
         Title = "VaultGuardian";
 
         _timer = DispatcherQueue.CreateTimer();
-        _timer.Interval = TimeSpan.FromMilliseconds(_settings.RefreshRateMs);
+        _timer.Interval = TimeSpan.FromMilliseconds(_settings.RefreshIntervalMs);
         _timer.Tick += OnTick;
         _timer.Start();
 
         _settings.Changed += OnSettingsChanged;
 
-        _overlay.Activate();
+        if (_settings.ShowOverlayOnStart)
+        {
+            ShowOverlayCheckbox.IsChecked = true;
+            _overlay.Activate();
+        }
+        else
+        {
+            ShowOverlayCheckbox.IsChecked = false;
+        }
+
         Closed += OnWindowClosed;
     }
 
     private void OnSettingsChanged(object? sender, EventArgs e)
     {
-        _timer.Interval = TimeSpan.FromMilliseconds(Math.Max(100, _settings.RefreshRateMs));
+        _timer.Interval = TimeSpan.FromMilliseconds(Math.Max(100, _settings.RefreshIntervalMs));
     }
 
     private void OnTick(DispatcherQueueTimer sender, object args)

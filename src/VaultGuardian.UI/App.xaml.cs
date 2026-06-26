@@ -9,6 +9,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
 using VaultGuardian.Core;
+using VaultGuardian.Core.Firewall;
 using VaultGuardian.Core.Interception;
 using VaultGuardian.Core.Observability;
 
@@ -28,10 +29,15 @@ public partial class App : Application
 
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
+        var settings = AppSettingsLoader.Load();
+
         var services = new ServiceCollection();
-        ConfigureServices(services);
+        ConfigureServices(services, settings);
         ServiceProvider = services.BuildServiceProvider();
 
+        var logger = ServiceProvider.GetRequiredService<ILogger<App>>();
+
+        // Load Rules
         var engine = ServiceProvider.GetRequiredService<RuleDecisionEngine>();
         var loadedRules = await RuleConfigurationLoader.LoadFromFileAsync("rules.json");
         if (loadedRules.Count > 0)
@@ -39,8 +45,29 @@ public partial class App : Application
             engine.UpdateRules(loadedRules);
         }
 
+        // Clean up any rules left in the Windows Firewall from the previous session,
+        // then re-apply the current rule set (persistent rules will be reinstated).
+        var firewall = ServiceProvider.GetRequiredService<IFirewallRuleApplier>();
+        try
+        {
+            await firewall.CleanupPreviousSessionAsync();
+            await firewall.ApplyAsync(engine.Rules);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to apply firewall rules at startup");
+        }
+
+        // Start Interceptor (lifetime managed by the DI container)
         var interceptor = ServiceProvider.GetRequiredService<IInterceptor>();
-        await interceptor.StartAsync(CancellationToken.None);
+        try
+        {
+            await interceptor.StartAsync(CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to start interceptor");
+        }
 
         TrayIcon = CreateTrayIcon();
 
@@ -67,6 +94,14 @@ public partial class App : Application
     {
         if (ServiceProvider != null)
         {
+            // Clear session-only firewall rules before tearing down the container.
+            try
+            {
+                var firewall = ServiceProvider.GetService<IFirewallRuleApplier>();
+                if (firewall != null) await firewall.ClearSessionRulesAsync();
+            }
+            catch { }
+
             try
             {
                 var interceptor = ServiceProvider.GetService<IInterceptor>();
@@ -74,7 +109,16 @@ public partial class App : Application
             }
             catch { }
 
-            if (ServiceProvider is IDisposable disposable) disposable.Dispose();
+            // ServiceProvider disposal cascades to singletons (incl. IInterceptor's
+            // IAsyncDisposable). Prefer DisposeAsync where available.
+            try
+            {
+                if (ServiceProvider is IAsyncDisposable asyncDisposable)
+                    await asyncDisposable.DisposeAsync();
+                else if (ServiceProvider is IDisposable disposable)
+                    disposable.Dispose();
+            }
+            catch { }
         }
         TrayIcon?.Dispose();
         TrayIcon = null;
@@ -165,20 +209,24 @@ public partial class App : Application
         }
     }
 
-    private void ConfigureServices(IServiceCollection services)
+    private static void ConfigureServices(IServiceCollection services, AppSettings settings)
     {
         services.AddLogging(builder => builder.AddConsole());
 
+        services.AddSingleton(settings);
         services.AddSingleton(new RuleDecisionEngine([]));
+
         services.AddSingleton<TrafficStats>();
         services.AddSingleton<CudaProfiler>();
         services.AddSingleton<ResourceMonitor>();
         services.AddSingleton<LiveMonitorService>();
         services.AddSingleton<IInterceptor, WinDivertInterceptor>();
-        services.AddSingleton(_ => AppSettings.Load());
+        services.AddSingleton<IProcessRunner, ProcessRunner>();
+        services.AddSingleton<IFirewallRuleApplier, WindowsFirewallRuleApplier>();
 
         services.AddSingleton<MainWindow>();
         services.AddSingleton<OverlayWindow>();
         services.AddTransient<RulesManagerWindow>();
+        services.AddTransient<SettingsWindow>();
     }
 }

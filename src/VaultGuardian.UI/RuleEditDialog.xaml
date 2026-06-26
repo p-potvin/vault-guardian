@@ -55,6 +55,8 @@
 
         <ToggleSwitch x:Name="BlockSwitch" Header="Action" OffContent="Allow" OnContent="Block" IsOn="True"/>
 
+        <ToggleSwitch x:Name="PersistSwitch" Header="Lifetime" OffContent="Session only" OnContent="Persistent across restarts" IsOn="True"/>
+
         <TextBlock x:Name="ErrorText" Foreground="{StaticResource SignalAlertBrush}" Visibility="Collapsed"
                    TextWrapping="Wrap"/>
     </StackPanel>

@@ -36,9 +36,10 @@
 
                     <Grid Grid.Row="0" Padding="12,8" Background="#1AFFFFFF">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="180"/>
-                            <ColumnDefinition Width="180"/>
-                            <ColumnDefinition Width="80"/>
+                            <ColumnDefinition Width="160"/>
+                            <ColumnDefinition Width="160"/>
+                            <ColumnDefinition Width="70"/>
+                            <ColumnDefinition Width="70"/>
                             <ColumnDefinition Width="80"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
@@ -46,7 +47,8 @@
                         <TextBlock Grid.Column="1" Text="Address"    Foreground="{StaticResource SecondaryTextBrush}" FontWeight="SemiBold" FontSize="11"/>
                         <TextBlock Grid.Column="2" Text="Port"       Foreground="{StaticResource SecondaryTextBrush}" FontWeight="SemiBold" FontSize="11"/>
                         <TextBlock Grid.Column="3" Text="Protocol"   Foreground="{StaticResource SecondaryTextBrush}" FontWeight="SemiBold" FontSize="11"/>
-                        <TextBlock Grid.Column="4" Text="Action"     Foreground="{StaticResource SecondaryTextBrush}" FontWeight="SemiBold" FontSize="11"/>
+                        <TextBlock Grid.Column="4" Text="Lifetime"   Foreground="{StaticResource SecondaryTextBrush}" FontWeight="SemiBold" FontSize="11"/>
+                        <TextBlock Grid.Column="5" Text="Action"     Foreground="{StaticResource SecondaryTextBrush}" FontWeight="SemiBold" FontSize="11"/>
                     </Grid>
 
                     <ListView x:Name="RulesList" Grid.Row="1"
@@ -57,9 +59,10 @@
                             <DataTemplate x:DataType="local:RuleRowVM">
                                 <Grid Padding="6,4">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="180"/>
-                                        <ColumnDefinition Width="180"/>
-                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="160"/>
+                                        <ColumnDefinition Width="160"/>
+                                        <ColumnDefinition Width="70"/>
+                                        <ColumnDefinition Width="70"/>
                                         <ColumnDefinition Width="80"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
@@ -74,6 +77,10 @@
                                     <TextBlock Grid.Column="3" Text="{x:Bind Protocol, Mode=OneTime}"
                                                Foreground="{StaticResource PrimaryTextBrush}" VerticalAlignment="Center"/>
                                     <TextBlock Grid.Column="4"
+                                               Text="{x:Bind local:RulesManagerWindow.FormatLifetime(IsPersistent), Mode=OneTime}"
+                                               Foreground="{x:Bind local:RulesManagerWindow.LifetimeBrush(IsPersistent), Mode=OneTime}"
+                                               VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="5"
                                                Text="{x:Bind local:RulesManagerWindow.FormatAction(Block), Mode=OneTime}"
                                                Foreground="{x:Bind local:RulesManagerWindow.ActionBrush(Block), Mode=OneTime}"
                                                VerticalAlignment="Center" FontWeight="Bold"/>

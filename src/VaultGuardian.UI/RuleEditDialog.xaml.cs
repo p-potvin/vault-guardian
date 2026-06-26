@@ -26,6 +26,7 @@ public sealed partial class RuleEditDialog : ContentDialog
             PortBox.Text = existing.RemotePort?.ToString() ?? string.Empty;
             ProtocolBox.SelectedIndex = (int)existing.Protocol;
             BlockSwitch.IsOn = existing.Block;
+            PersistSwitch.IsOn = existing.IsPersistent;
         }
 
         PrimaryButtonClick += OnPrimaryClick;
@@ -56,6 +57,16 @@ public sealed partial class RuleEditDialog : ContentDialog
             port = p;
         }
 
+        var remoteAddress = NullIfEmpty(AddressBox.Text);
+        if (remoteAddress != null &&
+            !System.Net.IPAddress.TryParse(remoteAddress, out _) &&
+            !System.Net.IPNetwork.TryParse(remoteAddress, out _))
+        {
+            ShowError("Remote Address must be a valid IP address or CIDR range (e.g. 192.168.1.1 or 192.168.1.0/24).");
+            args.Cancel = true;
+            return;
+        }
+
         var protocol = ProtocolBox.SelectedIndex switch
         {
             1 => TrafficProtocol.Tcp,
@@ -67,10 +78,11 @@ public sealed partial class RuleEditDialog : ContentDialog
             Name: name!,
             ProcessPath: NullIfEmpty(ProcessBox.Text),
             RemoteHost: NullIfEmpty(HostBox.Text),
-            RemoteAddress: NullIfEmpty(AddressBox.Text),
+            RemoteAddress: remoteAddress,
             RemotePort: port,
             Protocol: protocol,
-            Block: BlockSwitch.IsOn);
+            Block: BlockSwitch.IsOn,
+            IsPersistent: PersistSwitch.IsOn);
     }
 
     private static string? NullIfEmpty(string? s) =>

@@ -9,6 +9,7 @@ public sealed class RuleRowVM
     public string RemotePort { get; set; } = string.Empty;
     public string Protocol { get; set; } = string.Empty;
     public bool Block { get; set; }
+    public bool IsPersistent { get; set; }
     public EgressRule Rule { get; set; } = new(string.Empty);
 
     public static RuleRowVM From(EgressRule r) => new()
@@ -18,6 +19,7 @@ public sealed class RuleRowVM
         RemotePort = r.RemotePort?.ToString() ?? string.Empty,
         Protocol = r.Protocol.ToString(),
         Block = r.Block,
+        IsPersistent = r.IsPersistent,
         Rule = r,
     };
 }
