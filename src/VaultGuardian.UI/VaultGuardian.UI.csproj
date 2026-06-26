@@ -16,6 +16,7 @@
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <SelfContained>true</SelfContained>
     <EnableMsixTooling>true</EnableMsixTooling>
+    <DefineConstants>DISABLE_XAML_GENERATED_MAIN</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -36,6 +37,10 @@
     <Content Include="Assets\Icon.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Properties\" />
   </ItemGroup>
 
 </Project>

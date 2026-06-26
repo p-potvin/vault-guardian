@@ -20,7 +20,7 @@ public sealed class WindowsFirewallRuleApplier : IFirewallRuleApplier
     public WindowsFirewallRuleApplier(IProcessRunner runner, ILogger<WindowsFirewallRuleApplier> logger)
         : this(runner, logger, Path.Combine(AppDomain.CurrentDomain.BaseDirectory, StateFileName)) { }
 
-    internal WindowsFirewallRuleApplier(IProcessRunner runner, ILogger<WindowsFirewallRuleApplier> logger, string stateFilePath)
+    public WindowsFirewallRuleApplier(IProcessRunner runner, ILogger<WindowsFirewallRuleApplier> logger, string stateFilePath)
     {
         _runner = runner;
         _logger = logger;
