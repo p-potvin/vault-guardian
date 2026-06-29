@@ -1,3 +1,8 @@
+using VaultGuardian.Core.Ingress;
+using VaultGuardian.Core.Ingress.Mitm;
+using VaultGuardian.Core.Ingress.Telemetry;
+using VaultGuardian.Core.Ingress.Tracing;
+
 namespace VaultGuardian.Core.Observability;
 
 public sealed record SystemResourceMetrics(
@@ -26,4 +31,9 @@ public sealed record TrafficStatsSnapshot(
 
 public sealed record AggregateMetrics(
     SystemResourceMetrics Resources,
-    TrafficStatsSnapshot Traffic);
+    TrafficStatsSnapshot Traffic,
+    IngressTrafficSnapshot Ingress,
+    IngressWatcherStatus IngressWatcher,
+    IReadOnlyList<PrivacyTelemetryHit> IngressTelemetryHits,
+    FullTraceStatus FullTrace,
+    MitmProxyStatus MitmProxy);

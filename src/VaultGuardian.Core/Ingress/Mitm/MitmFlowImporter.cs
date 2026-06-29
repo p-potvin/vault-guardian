@@ -1,0 +1,38 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using VaultGuardian.Core.Ingress.Telemetry;
+
+namespace VaultGuardian.Core.Ingress.Mitm;
+
+public sealed class MitmFlowImporter
+{
+    public async Task<IReadOnlyList<IngressContentEvent>> ImportAsync(string path, CancellationToken cancellationToken = default)
+    {
+        await using var stream = File.OpenRead(path);
+        var flow = await JsonSerializer.DeserializeAsync(
+                stream,
+                MitmJsonContext.Default.MitmFlowJson,
+                cancellationToken)
+            .ConfigureAwait(false);
+        if (flow == null)
+        {
+            return [];
+        }
+
+        var eventFlow = new MitmHttpFlowEvent(
+            flow.Id,
+            flow.TimestampStart,
+            flow.Request.Url,
+            flow.Request.Method,
+            flow.Response?.StatusCode,
+            flow.Request.Headers,
+            flow.Response?.Headers ?? new Dictionary<string, string>(),
+            flow.Request.Text,
+            flow.Response?.Text);
+        return [IngressContentEvent.FromMitmFlow(eventFlow)];
+    }
+}
+
+[JsonSerializable(typeof(MitmFlowJson))]
+[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower)]
+internal sealed partial class MitmJsonContext : JsonSerializerContext;

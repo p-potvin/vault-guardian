@@ -2,27 +2,54 @@ using System.Runtime.InteropServices;
 
 namespace VaultGuardian.Core.Observability;
 
-internal static partial class CuptiInterop
+/// <summary>
+/// P/Invoke bindings for NVIDIA CUPTI (CUDA Profiling Tools Interface) and NVML (NVIDIA Management Library).
+/// This module dynamically loads native libraries from vendored paths or system installations.
+/// NOTE: This class uses lazy static initialization to defer native library loading until
+/// environment variable checks pass. P/Invoke declarations are in nested [LibraryImport] classes
+/// to prevent JIT compilation of DllImport stubs at class load time.
+/// </summary>
+internal static class CuptiInterop
 {
-    private const string CuptiLib = "cupti64_2024.1.0.dll"; // Note: Specific version might vary, usually path has it. 
-    // In production, we'd search for the DLL or use a generic name if possible.
+    // Lazy-initialized wrapper for CUPTI P/Invoke
+    private static class CuptiNative
+    {
+        private const string CuptiLib = "cupti64_120.dll";
 
-    [DllImport(CuptiLib, CallingConvention = CallingConvention.Cdecl)]
-    public static extern CuptiResult cuptiActivityEnable(CuptiActivityKind kind);
+        [DllImport(CuptiLib, CallingConvention = CallingConvention.Cdecl)]
+        private static extern CuptiResult _cuptiActivityEnable(CuptiActivityKind kind);
 
-    [DllImport(CuptiLib, CallingConvention = CallingConvention.Cdecl)]
-    public static extern CuptiResult cuptiActivityDisable(CuptiActivityKind kind);
+        [DllImport(CuptiLib, CallingConvention = CallingConvention.Cdecl)]
+        private static extern CuptiResult _cuptiActivityDisable(CuptiActivityKind kind);
 
-    [DllImport(CuptiLib, CallingConvention = CallingConvention.Cdecl)]
-    public static extern CuptiResult cuptiActivityRegisterCallbacks(
-        CuptiBufferAllocCallback bufferAlloc,
-        CuptiBufferRequestCallback bufferRequest);
+        [DllImport(CuptiLib, CallingConvention = CallingConvention.Cdecl)]
+        private static extern CuptiResult _cuptiActivityRegisterCallbacks(
+            CuptiBufferAllocCallback bufferAlloc,
+            CuptiBufferRequestCallback bufferRequest);
 
-    [DllImport(CuptiLib, CallingConvention = CallingConvention.Cdecl)]
-    public static extern CuptiResult cuptiActivityFlushAll(uint flag);
+        [DllImport(CuptiLib, CallingConvention = CallingConvention.Cdecl)]
+        private static extern CuptiResult _cuptiActivityFlushAll(uint flag);
 
-    [DllImport(CuptiLib, CallingConvention = CallingConvention.Cdecl)]
-    public static extern CuptiResult cuptiActivityGetNextRecord(IntPtr buffer, uint validBufferSizeBytes, out IntPtr record);
+        [DllImport(CuptiLib, CallingConvention = CallingConvention.Cdecl)]
+        private static extern CuptiResult _cuptiActivityGetNextRecord(IntPtr buffer, uint validBufferSizeBytes, out IntPtr record);
+
+        public static CuptiResult cuptiActivityEnable(CuptiActivityKind kind) => _cuptiActivityEnable(kind);
+        public static CuptiResult cuptiActivityDisable(CuptiActivityKind kind) => _cuptiActivityDisable(kind);
+        public static CuptiResult cuptiActivityRegisterCallbacks(CuptiBufferAllocCallback bufferAlloc, CuptiBufferRequestCallback bufferRequest) 
+            => _cuptiActivityRegisterCallbacks(bufferAlloc, bufferRequest);
+        public static CuptiResult cuptiActivityFlushAll(uint flag) => _cuptiActivityFlushAll(flag);
+        public static CuptiResult cuptiActivityGetNextRecord(IntPtr buffer, uint validBufferSizeBytes, out IntPtr record)
+            => _cuptiActivityGetNextRecord(buffer, validBufferSizeBytes, out record);
+    }
+
+    // Public wrappers - these are only called if CUDA is enabled
+    public static CuptiResult cuptiActivityEnable(CuptiActivityKind kind) => CuptiNative.cuptiActivityEnable(kind);
+    public static CuptiResult cuptiActivityDisable(CuptiActivityKind kind) => CuptiNative.cuptiActivityDisable(kind);
+    public static CuptiResult cuptiActivityRegisterCallbacks(CuptiBufferAllocCallback bufferAlloc, CuptiBufferRequestCallback bufferRequest)
+        => CuptiNative.cuptiActivityRegisterCallbacks(bufferAlloc, bufferRequest);
+    public static CuptiResult cuptiActivityFlushAll(uint flag) => CuptiNative.cuptiActivityFlushAll(flag);
+    public static CuptiResult cuptiActivityGetNextRecord(IntPtr buffer, uint validBufferSizeBytes, out IntPtr record)
+        => CuptiNative.cuptiActivityGetNextRecord(buffer, validBufferSizeBytes, out record);
 
     public enum CuptiResult
     {

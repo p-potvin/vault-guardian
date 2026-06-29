@@ -1,0 +1,7 @@
+# CUDA vendored binaries
+# These are checked in to ensure consistent builds across environments
+# Do NOT modify unless updating CUDA/CUPTI versions
+
+# Allow the directory to be tracked, but ignore OS-specific cache files
+.DS_Store
+Thumbs.db
