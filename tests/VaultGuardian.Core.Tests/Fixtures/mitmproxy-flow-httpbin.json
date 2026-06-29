@@ -1,0 +1,19 @@
+{
+  "id": "fixture-flow-1",
+  "request": {
+    "method": "POST",
+    "url": "https://telemetry.example.test/collect",
+    "headers": {
+      "content-type": "application/json"
+    },
+    "text": "{\"email\":\"person@example.test\",\"event\":\"startup\"}"
+  },
+  "response": {
+    "status_code": 204,
+    "headers": {
+      "content-type": "text/plain"
+    },
+    "text": ""
+  },
+  "timestamp_start": "2026-06-29T07:30:00-04:00"
+}

@@ -293,6 +293,187 @@
                         </StackPanel>
                     </Grid>
                 </PivotItem>
+
+                <PivotItem Header="Ingress">
+                    <Grid Margin="0,12,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,16">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock x:Name="IngressStatusText" Grid.Row="0" Grid.ColumnSpan="3"
+                                       Text="Capture: disabled in settings"
+                                       Foreground="{StaticResource SecondaryTextBrush}"
+                                       FontFamily="{StaticResource VaultMonoFontFamily}"
+                                       FontSize="12" Margin="0,0,0,10"/>
+
+                            <Border Grid.Row="1" Grid.Column="0" Background="{StaticResource ConsoleSurfaceBrush}"
+                                    BorderBrush="{StaticResource ConsoleBorderBrush}" BorderThickness="1"
+                                    CornerRadius="{StaticResource PanelCornerRadius}" Padding="18" Margin="0,0,10,0">
+                                <StackPanel>
+                                    <TextBlock Text="INGRESS PACKETS" Foreground="{StaticResource TertiaryTextBrush}" FontSize="10" FontWeight="Bold"/>
+                                    <TextBlock x:Name="IngressPacketCountText" Text="0"
+                                               FontFamily="{StaticResource VaultMonoFontFamily}"
+                                               Foreground="{StaticResource PrimaryTextBrush}" FontSize="24" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Row="1" Grid.Column="1" Background="{StaticResource ConsoleSurfaceBrush}"
+                                    BorderBrush="{StaticResource ConsoleBorderBrush}" BorderThickness="1"
+                                    CornerRadius="{StaticResource PanelCornerRadius}" Padding="18" Margin="0,0,10,0">
+                                <StackPanel>
+                                    <TextBlock Text="REMOTE SOURCES" Foreground="{StaticResource TertiaryTextBrush}" FontSize="10" FontWeight="Bold"/>
+                                    <TextBlock x:Name="IngressSourceCountText" Text="0"
+                                               FontFamily="{StaticResource VaultMonoFontFamily}"
+                                               Foreground="{StaticResource PrimaryTextBrush}" FontSize="24" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Row="1" Grid.Column="2" Background="{StaticResource ConsoleSurfaceBrush}"
+                                    BorderBrush="{StaticResource ConsoleBorderBrush}" BorderThickness="1"
+                                    CornerRadius="{StaticResource PanelCornerRadius}" Padding="18">
+                                <StackPanel>
+                                    <TextBlock Text="ARCHIVED BYTES" Foreground="{StaticResource TertiaryTextBrush}" FontSize="10" FontWeight="Bold"/>
+                                    <TextBlock x:Name="IngressByteCountText" Text="0 MB"
+                                               FontFamily="{StaticResource VaultMonoFontFamily}"
+                                               Foreground="{StaticResource PrimaryTextBrush}" FontSize="24" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1.1*"/>
+                                <ColumnDefinition Width="1.4*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Border Grid.Column="0"
+                                    Background="{StaticResource ConsoleRaisedBrush}"
+                                    BorderBrush="{StaticResource ConsoleBorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="{StaticResource CardCornerRadius}"
+                                    Padding="20" Margin="0,0,12,0">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Text="Inbound Sources" FontSize="18" FontWeight="SemiBold"
+                                               Foreground="{StaticResource PrimaryTextBrush}" Margin="0,0,0,12"/>
+                                    <ListView x:Name="IngressSourceList" Grid.Row="1"
+                                              SelectionChanged="OnIngressSourceSelectionChanged"
+                                              Background="{StaticResource ConsoleSurfaceBrush}"
+                                              Foreground="{StaticResource PrimaryTextBrush}"
+                                              BorderBrush="{StaticResource ConsoleBorderBrush}"
+                                              BorderThickness="1"/>
+                                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
+                                        <Button Content="Export Flow" Click="OnExportIngressFlowClick"
+                                                Padding="14,8" Margin="0,0,10,0"
+                                                Background="Transparent"
+                                                BorderBrush="{StaticResource ConsoleBorderBrush}"
+                                                BorderThickness="1"
+                                                Foreground="{StaticResource SecondaryTextBrush}"/>
+                                        <Button Content="Clear Archive" Click="OnClearIngressArchiveClick"
+                                                Padding="14,8"
+                                                Background="{StaticResource ConsoleGoldBrush}"
+                                                Foreground="#1A1230"
+                                                FontWeight="SemiBold"
+                                                BorderThickness="0"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <Border Grid.Column="1"
+                                    Background="{StaticResource ConsoleRaisedBrush}"
+                                    BorderBrush="{StaticResource ConsoleBorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="{StaticResource CardCornerRadius}"
+                                    Padding="20">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Text="Selected Flow" FontSize="18" FontWeight="SemiBold"
+                                               Foreground="{StaticResource PrimaryTextBrush}" Margin="0,0,0,12"/>
+                                    <TextBlock x:Name="IngressDetailsText" Grid.Row="1"
+                                               Text="No inbound packets archived yet."
+                                               FontFamily="{StaticResource VaultMonoFontFamily}"
+                                               Foreground="{StaticResource PrimaryTextBrush}"
+                                               FontSize="12" TextWrapping="Wrap" Margin="0,0,0,16"/>
+                                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto"
+                                                  Background="{StaticResource ConsoleSurfaceBrush}">
+                                        <TextBlock x:Name="IngressPayloadPreviewText"
+                                                   Text="Payload preview will appear after inbound traffic is captured."
+                                                   FontFamily="{StaticResource VaultMonoFontFamily}"
+                                                   Foreground="{StaticResource SecondaryTextBrush}"
+                                                   FontSize="12" TextWrapping="Wrap" Padding="14"/>
+                                    </ScrollViewer>
+                                    <TextBlock x:Name="MitmProxyStatusText"
+                                               Grid.Row="3"
+                                               Text="Browser MITM: stopped"
+                                               Foreground="{StaticResource SecondaryTextBrush}"
+                                               FontFamily="{StaticResource VaultMonoFontFamily}"
+                                               FontSize="12"
+                                               Margin="0,10,0,0"/>
+                                    <TextBlock x:Name="FullTraceStatusText"
+                                               Grid.Row="3"
+                                               Text="Full trace: idle"
+                                               Foreground="{StaticResource SecondaryTextBrush}"
+                                               FontFamily="{StaticResource VaultMonoFontFamily}"
+                                               FontSize="12"
+                                               HorizontalAlignment="Right"
+                                               Margin="0,10,0,0"/>
+                                    <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+                                        <Button x:Name="StartBrowserMitmButton"
+                                                Content="Start Browser MITM"
+                                                Click="OnStartBrowserMitmClick"
+                                                Padding="14,8"
+                                                Margin="0,0,10,0"
+                                                Background="Transparent"
+                                                BorderBrush="{StaticResource ConsoleBorderBrush}"
+                                                BorderThickness="1"
+                                                Foreground="{StaticResource SecondaryTextBrush}"/>
+                                        <Button x:Name="StopBrowserMitmButton"
+                                                Content="Stop Browser MITM"
+                                                Click="OnStopBrowserMitmClick"
+                                                Padding="14,8"
+                                                Background="Transparent"
+                                                BorderBrush="{StaticResource ConsoleBorderBrush}"
+                                                BorderThickness="1"
+                                                Foreground="{StaticResource SecondaryTextBrush}"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                        <ListView x:Name="IngressTelemetryHitsList"
+                                  Grid.Row="1"
+                                  HorizontalAlignment="Right"
+                                  VerticalAlignment="Bottom"
+                                  Width="420"
+                                  MaxHeight="150"
+                                  Background="{StaticResource ConsoleSurfaceBrush}"
+                                  Foreground="{StaticResource PrimaryTextBrush}"
+                                  BorderBrush="{StaticResource ConsoleBorderBrush}"
+                                  BorderThickness="1"
+                                  Margin="0,0,20,20"/>
+                    </Grid>
+                </PivotItem>
             </Pivot>
 
             <Border Grid.Row="2"

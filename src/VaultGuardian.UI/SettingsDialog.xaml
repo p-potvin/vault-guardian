@@ -31,5 +31,8 @@
 
         <CheckBox x:Name="StartupCheck" Content="Launch VaultGuardian at Windows startup"
                   Foreground="{StaticResource PrimaryTextBrush}"/>
+
+        <CheckBox x:Name="IngressCaptureCheck" Content="Enable passive ingress packet capture on next launch"
+                  Foreground="{StaticResource PrimaryTextBrush}"/>
     </StackPanel>
 </ContentDialog>

@@ -12,12 +12,12 @@ public sealed partial class ResourceMonitor : IDisposable
     private readonly PerformanceCounter _diskWriteCounter;
     private readonly PerformanceCounter _diskQueueCounter;
     private readonly PerformanceCounter _diskTimeCounter;
-    private readonly CudaProfiler _cudaProfiler;
+    private readonly Lazy<CudaProfiler> _cudaProfiler;
     private bool _disposed;
     private bool _nvmlInitialized;
     private IntPtr _gpuHandle;
 
-    public ResourceMonitor(CudaProfiler cudaProfiler)
+    public ResourceMonitor(Lazy<CudaProfiler> cudaProfiler)
     {
         _cudaProfiler = cudaProfiler;
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -122,8 +122,8 @@ public sealed partial class ResourceMonitor : IDisposable
             GpuMemoryUsedBytes: gpuStats.MemUsed,
             GpuMemoryTotalBytes: gpuStats.MemTotal,
             GpuPowerDrawWatts: gpuStats.Power,
-            CudaCoreUtilization: _cudaProfiler.GetCoreUtilization(),
-            ActiveCudaKernels: _cudaProfiler.GetActiveKernelCount(),
+            CudaCoreUtilization: _cudaProfiler.IsValueCreated ? _cudaProfiler.Value.GetCoreUtilization() : 0,
+            ActiveCudaKernels: _cudaProfiler.IsValueCreated ? _cudaProfiler.Value.GetActiveKernelCount() : 0,
             DiskReadBytesPerSec: _diskReadCounter.NextValue(),
             DiskWriteBytesPerSec: _diskWriteCounter.NextValue(),
             DiskActiveTimePercentage: _diskTimeCounter.NextValue(),
@@ -177,13 +177,14 @@ public sealed partial class ResourceMonitor : IDisposable
         _diskWriteCounter?.Dispose();
         _diskQueueCounter?.Dispose();
         _diskTimeCounter?.Dispose();
-        _cudaProfiler?.Dispose();
+        if (_cudaProfiler.IsValueCreated)
+            _cudaProfiler.Value?.Dispose();
 
         if (_nvmlInitialized)
         {
             try { nvmlShutdown(); } catch { }
         }
-        
+
         _disposed = true;
     }
 }

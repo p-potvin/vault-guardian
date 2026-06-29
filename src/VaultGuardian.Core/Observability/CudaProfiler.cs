@@ -3,9 +3,44 @@ using static VaultGuardian.Core.Observability.CuptiInterop;
 
 namespace VaultGuardian.Core.Observability;
 
+/// <summary>
+/// CUDA profiler for monitoring GPU kernel execution and utilization.
+/// Dynamically loads NVIDIA CUDA libraries from vendored paths or system installations.
+/// Gracefully degrades if CUDA is unavailable.
+/// </summary>
 public sealed class CudaProfiler : IDisposable
 {
     private const int BufferSizeBytes = 4 * 1024 * 1024; // 4 MB activity buffer
+    private static bool _loaderInitialized;
+
+    /// <summary>
+    /// Static initializer - attempts to set up native library resolution but never crashes.
+    /// </summary>
+    static CudaProfiler()
+    {
+        // Don't do anything in the static constructor to avoid fail-fast exceptions.
+        // Initialization happens lazily in the instance constructor.
+    }
+
+    /// <summary>
+    /// Ensures the library loader is initialized once.
+    /// </summary>
+    private static void EnsureLoaderInitialized()
+    {
+        if (_loaderInitialized) return;
+
+        try
+        {
+            CudaLibraryLoader.Initialize();
+            _loaderInitialized = true;
+        }
+        catch (Exception ex)
+        {
+            // Log but don't crash - CUDA is optional
+            System.Diagnostics.Debug.WriteLine($"CUDA library loader initialization failed: {ex}");
+            _loaderInitialized = true; // Mark as attempted to avoid repeated tries
+        }
+    }
 
     // NVML subset for GPU utilization (same driver as CUPTI)
     [DllImport("nvml.dll", CallingConvention = CallingConvention.Cdecl)]
@@ -36,6 +71,17 @@ public sealed class CudaProfiler : IDisposable
 
     public CudaProfiler()
     {
+        // Check if CUDA is explicitly enabled via environment variable
+        bool cudaEnabled = Environment.GetEnvironmentVariable("VAULTGUARDIAN_CUDA_ENABLED") == "1";
+        if (!cudaEnabled)
+        {
+            CudaDiagnostics.LogInfo("CUDA profiler disabled (set VAULTGUARDIAN_CUDA_ENABLED=1 to enable)");
+            return;
+        }
+
+        // Lazy initialization of library loader - this is safer than static constructor
+        EnsureLoaderInitialized();
+
         try
         {
             if (nvmlInit() == 0)
@@ -45,10 +91,21 @@ public sealed class CudaProfiler : IDisposable
                     _gpuHandle = IntPtr.Zero;
             }
         }
-        catch { /* nvml.dll absent or driver not present */ }
+        catch (DllNotFoundException ex)
+        {
+            CudaDiagnostics.LogWarning($"NVML initialization failed: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            CudaDiagnostics.LogError("Unexpected error during NVML initialization", ex);
+        }
 
         // CUPTI is only useful on NVIDIA hardware
-        if (!_nvmlInitialized) return;
+        if (!_nvmlInitialized)
+        {
+            CudaDiagnostics.LogInfo("NVML not initialized; GPU profiling unavailable.");
+            return;
+        }
 
         try
         {
@@ -65,13 +122,24 @@ public sealed class CudaProfiler : IDisposable
                 cuptiActivityEnable(CuptiActivityKind.CUPTI_ACTIVITY_KIND_KERNEL) != CuptiResult.CUPTI_SUCCESS)
             {
                 FreeCuptiHandles();
+                CudaDiagnostics.LogWarning("CUPTI activity registration failed");
                 return;
             }
 
             _cuptiActive = true;
+            CudaDiagnostics.LogInfo("CUPTI GPU profiler initialized successfully");
         }
-        catch
+        catch (DllNotFoundException ex)
         {
+            var missing = CudaLibraryLoader.CheckAvailableLibraries();
+            CudaDiagnostics.LogError(
+                $"CUPTI initialization failed. Missing DLLs: {string.Join(", ", missing)}",
+                ex);
+            FreeCuptiHandles();
+        }
+        catch (Exception ex)
+        {
+            CudaDiagnostics.LogError("Unexpected error during CUPTI initialization", ex);
             FreeCuptiHandles();
         }
     }
