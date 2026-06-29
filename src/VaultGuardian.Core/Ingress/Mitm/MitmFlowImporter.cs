@@ -19,6 +19,54 @@ public sealed class MitmFlowImporter
             return [];
         }
 
+        return [ConvertFlow(flow)];
+    }
+
+    public async Task<MitmFlowImportBatch> ImportJsonLinesAsync(
+        string path,
+        long startLineNumber,
+        CancellationToken cancellationToken = default)
+    {
+        if (!File.Exists(path))
+        {
+            return new MitmFlowImportBatch([], startLineNumber);
+        }
+
+        var events = new List<IngressContentEvent>();
+        long lineNumber = 0;
+        using var reader = new StreamReader(path);
+        while (await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false) is { } line)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var currentLineNumber = lineNumber;
+            lineNumber++;
+
+            if (currentLineNumber < startLineNumber || string.IsNullOrWhiteSpace(line))
+            {
+                continue;
+            }
+
+            MitmFlowJson? flow;
+            try
+            {
+                flow = JsonSerializer.Deserialize(line, MitmJsonContext.Default.MitmFlowJson);
+            }
+            catch (JsonException)
+            {
+                return new MitmFlowImportBatch(events, currentLineNumber);
+            }
+
+            if (flow != null)
+            {
+                events.Add(ConvertFlow(flow));
+            }
+        }
+
+        return new MitmFlowImportBatch(events, lineNumber);
+    }
+
+    private static IngressContentEvent ConvertFlow(MitmFlowJson flow)
+    {
         var eventFlow = new MitmHttpFlowEvent(
             flow.Id,
             flow.TimestampStart,
@@ -29,9 +77,13 @@ public sealed class MitmFlowImporter
             flow.Response?.Headers ?? new Dictionary<string, string>(),
             flow.Request.Text,
             flow.Response?.Text);
-        return [IngressContentEvent.FromMitmFlow(eventFlow)];
+        return IngressContentEvent.FromMitmFlow(eventFlow);
     }
 }
+
+public sealed record MitmFlowImportBatch(
+    IReadOnlyList<IngressContentEvent> Events,
+    long NextLineNumber);
 
 [JsonSerializable(typeof(MitmFlowJson))]
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower)]

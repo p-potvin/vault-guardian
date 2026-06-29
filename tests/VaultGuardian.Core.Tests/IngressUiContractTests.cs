@@ -23,6 +23,7 @@ public sealed class IngressUiContractTests
         Assert.Contains("FullTraceStatusText", xaml);
         Assert.Contains("OnStartBrowserMitmClick", codeBehind);
         Assert.Contains("OnStopBrowserMitmClick", codeBehind);
+        Assert.Contains("ImportedFlows", codeBehind);
     }
 
     private static string FindRepoRoot()

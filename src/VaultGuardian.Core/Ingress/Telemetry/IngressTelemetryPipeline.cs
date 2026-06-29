@@ -6,7 +6,8 @@ namespace VaultGuardian.Core.Ingress.Telemetry;
 public sealed record IngressTelemetryPipelineResult(
     int EventsProcessed,
     int HitsDetected,
-    FullTraceStatus FullTrace);
+    FullTraceStatus FullTrace,
+    long? NextLineNumber = null);
 
 public sealed class IngressTelemetryPipeline
 {
@@ -32,6 +33,23 @@ public sealed class IngressTelemetryPipeline
         CancellationToken cancellationToken = default)
     {
         var events = await _mitmFlowImporter.ImportAsync(path, cancellationToken).ConfigureAwait(false);
+        return await ProcessEventsAsync(events, nextLineNumber: null, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<IngressTelemetryPipelineResult> ProcessMitmJsonLinesAsync(
+        string path,
+        long startLineNumber,
+        CancellationToken cancellationToken = default)
+    {
+        var batch = await _mitmFlowImporter.ImportJsonLinesAsync(path, startLineNumber, cancellationToken).ConfigureAwait(false);
+        return await ProcessEventsAsync(batch.Events, batch.NextLineNumber, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<IngressTelemetryPipelineResult> ProcessEventsAsync(
+        IReadOnlyList<IngressContentEvent> events,
+        long? nextLineNumber,
+        CancellationToken cancellationToken)
+    {
         var hits = new List<PrivacyTelemetryHit>();
 
         foreach (var contentEvent in events)
@@ -50,6 +68,6 @@ public sealed class IngressTelemetryPipeline
         }
 
         await _telemetryStore.AppendAsync(hits, cancellationToken).ConfigureAwait(false);
-        return new IngressTelemetryPipelineResult(events.Count, hits.Count, _fullTraceManager.GetStatus());
+        return new IngressTelemetryPipelineResult(events.Count, hits.Count, _fullTraceManager.GetStatus(), nextLineNumber);
     }
 }

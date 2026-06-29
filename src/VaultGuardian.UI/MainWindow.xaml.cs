@@ -365,9 +365,16 @@ public sealed partial class MainWindow : Window
 
     private static string FormatMitmStatus(MitmProxyStatus status)
     {
+        var importDetail = status.ImportedFlows > 0
+            ? $" | imported {status.ImportedFlows:N0} flows"
+            : string.Empty;
+        var errorDetail = string.IsNullOrWhiteSpace(status.LastError)
+            ? string.Empty
+            : $" | import warning: {status.LastError}";
+
         return status.State == MitmProxyState.Running
-            ? $"Browser MITM: running on 127.0.0.1:{status.ListenPort}"
-            : $"Browser MITM: {status.State}";
+            ? $"Browser MITM: running on 127.0.0.1:{status.ListenPort}{importDetail}{errorDetail}"
+            : $"Browser MITM: {status.State}{importDetail}{errorDetail}";
     }
 
     private void RenderIngressFlowDetails(IngressFlowSummary flow)

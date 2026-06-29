@@ -21,8 +21,25 @@ public sealed record MitmProxyOptions(
     string MitmDumpPath,
     int ListenPort,
     string BrowserExecutablePath,
-    string BrowserProfilePath)
+    string BrowserProfilePath,
+    string FlowExportPath,
+    string AddonScriptPath)
 {
+    public MitmProxyOptions(
+        string mitmDumpPath,
+        int listenPort,
+        string browserExecutablePath,
+        string browserProfilePath)
+        : this(
+            mitmDumpPath,
+            listenPort,
+            browserExecutablePath,
+            browserProfilePath,
+            Path.Combine(browserProfilePath, "mitm-flows.jsonl"),
+            Path.Combine(browserProfilePath, "mitm-flow-exporter.py"))
+    {
+    }
+
     public static MitmProxyOptions Default(string baseDirectory) => new(
         "mitmdump",
         18080,

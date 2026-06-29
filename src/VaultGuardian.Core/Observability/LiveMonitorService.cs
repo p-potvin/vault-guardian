@@ -14,6 +14,7 @@ public sealed class LiveMonitorService : IDisposable
     private readonly PrivacyTelemetryStore? _privacyTelemetryStore;
     private readonly FullTraceManager? _fullTraceManager;
     private readonly MitmProxyService? _mitmProxyService;
+    private readonly LiveMitmFlowProcessor? _liveMitmFlowProcessor;
 
     public LiveMonitorService(
         ResourceMonitor resourceMonitor,
@@ -22,7 +23,8 @@ public sealed class LiveMonitorService : IDisposable
         IIngressTrafficWatcher? ingressTrafficWatcher = null,
         PrivacyTelemetryStore? privacyTelemetryStore = null,
         FullTraceManager? fullTraceManager = null,
-        MitmProxyService? mitmProxyService = null)
+        MitmProxyService? mitmProxyService = null,
+        LiveMitmFlowProcessor? liveMitmFlowProcessor = null)
     {
         _resourceMonitor = resourceMonitor;
         _trafficStats = trafficStats;
@@ -31,10 +33,13 @@ public sealed class LiveMonitorService : IDisposable
         _privacyTelemetryStore = privacyTelemetryStore;
         _fullTraceManager = fullTraceManager;
         _mitmProxyService = mitmProxyService;
+        _liveMitmFlowProcessor = liveMitmFlowProcessor;
     }
 
     public AggregateMetrics GetLatestMetrics()
     {
+        _liveMitmFlowProcessor?.ProcessNewFlows();
+
         return new AggregateMetrics(
             _resourceMonitor.GetCurrentMetrics(),
             _trafficStats.GetSnapshot(),

@@ -292,6 +292,7 @@ public partial class App : Application
                 Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mitm-browser-profile"));
         });
         services.AddSingleton<MitmProxyService>();
+        services.AddSingleton<LiveMitmFlowProcessor>();
 
         // CudaProfiler is lazily instantiated only when accessed and CUDA is enabled.
         // ResourceMonitor will handle the case where it's null.
