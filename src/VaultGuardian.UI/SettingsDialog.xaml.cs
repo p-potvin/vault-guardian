@@ -21,6 +21,7 @@ public sealed partial class SettingsDialog : ContentDialog
         RefreshValueText.Text = $"{_settings.RefreshIntervalMs} ms";
         MinimizeToTrayCheck.IsChecked = _settings.MinimizeToTrayOnClose;
         StartupCheck.IsChecked = IsRegisteredForStartup();
+        IngressCaptureCheck.IsChecked = _settings.EnableIngressPacketCapture;
 
         PrimaryButtonClick += OnPrimaryClick;
     }
@@ -34,6 +35,7 @@ public sealed partial class SettingsDialog : ContentDialog
     {
         _settings.RefreshIntervalMs = (int)RefreshSlider.Value;
         _settings.MinimizeToTrayOnClose = MinimizeToTrayCheck.IsChecked == true;
+        _settings.EnableIngressPacketCapture = IngressCaptureCheck.IsChecked == true;
         ApplyStartupRegistration(StartupCheck.IsChecked == true);
         AppSettingsLoader.Save(_settings);
         _settings.NotifyChanged();

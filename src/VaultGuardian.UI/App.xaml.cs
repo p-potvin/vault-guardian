@@ -9,7 +9,12 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
 using VaultGuardian.Core;
+using VaultGuardian.Core.Diagnostics;
 using VaultGuardian.Core.Firewall;
+using VaultGuardian.Core.Ingress;
+using VaultGuardian.Core.Ingress.Mitm;
+using VaultGuardian.Core.Ingress.Telemetry;
+using VaultGuardian.Core.Ingress.Tracing;
 using VaultGuardian.Core.Interception;
 using VaultGuardian.Core.Observability;
 
@@ -25,6 +30,22 @@ public partial class App : Application
     {
         InitializeComponent();
         UnhandledException += OnUnhandledException;
+
+        // Suppress noisy debug output for assembly loading
+        SuppressDebugLogging();
+    }
+
+    private static void SuppressDebugLogging()
+    {
+        // Note: Debug output filtering for "Skipped loading symbols" etc.
+        // cannot be reliably done from managed code due to native debug output.
+        // Visual Studio's debugger output window shows native debug output
+        // that bypasses managed trace listeners entirely.
+        // 
+        // To suppress these messages in Visual Studio:
+        // 1. Tools → Options → Debugging → Output Window
+        // 2. Or use debugger breakpoint filters
+        // 3. Or set environment variable: VAULTGUARDIAN_CUDA_ENABLED=1 to enable CUDA
     }
 
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
@@ -74,6 +95,34 @@ public partial class App : Application
         MainAppWindow = ServiceProvider.GetRequiredService<MainWindow>();
         MainAppWindow.Closed += OnMainWindowClosed;
         MainAppWindow.Activate();
+
+        if (settings.EnableIngressPacketCapture)
+        {
+            _ = StartIngressWatcherAsync(logger);
+        }
+        else
+        {
+            logger.LogInformation("Ingress packet capture is disabled; enable it in settings to start passive capture on the next launch.");
+        }
+    }
+
+    private static async Task StartIngressWatcherAsync(ILogger<App> logger)
+    {
+        if (ServiceProvider == null)
+        {
+            return;
+        }
+
+        var ingressWatcher = ServiceProvider.GetRequiredService<IIngressTrafficWatcher>();
+        try
+        {
+            await Task.Yield();
+            await ingressWatcher.StartAsync(CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to start ingress traffic watcher");
+        }
     }
 
     private void OnMainWindowClosed(object sender, WindowEventArgs args)
@@ -106,6 +155,13 @@ public partial class App : Application
             {
                 var interceptor = ServiceProvider.GetService<IInterceptor>();
                 if (interceptor != null) await interceptor.DisposeAsync();
+            }
+            catch { }
+
+            try
+            {
+                var ingressWatcher = ServiceProvider.GetService<IIngressTrafficWatcher>();
+                if (ingressWatcher != null) await ingressWatcher.DisposeAsync();
             }
             catch { }
 
@@ -217,10 +273,35 @@ public partial class App : Application
         services.AddSingleton(new RuleDecisionEngine([]));
 
         services.AddSingleton<TrafficStats>();
-        services.AddSingleton<CudaProfiler>();
+        services.AddSingleton<IIngressTrafficStore>(_ =>
+            new IngressTrafficStore(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ingress-archive.json")));
+        services.AddSingleton<PrivacyWatchProfileStore>(_ =>
+            new PrivacyWatchProfileStore(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "privacy-watch-profile.json")));
+        services.AddSingleton<PrivacyTelemetryStore>(_ =>
+            new PrivacyTelemetryStore(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "privacy-telemetry-hits.jsonl")));
+        services.AddSingleton<FullTraceManager>();
+        services.AddSingleton<MitmFlowImporter>();
+        services.AddSingleton<IManagedProcessLauncher, ManagedProcessLauncher>();
+        services.AddSingleton(sp =>
+        {
+            var appSettings = sp.GetRequiredService<AppSettings>();
+            return new MitmProxyOptions(
+                appSettings.MitmDumpPath,
+                appSettings.MitmProxyPort,
+                appSettings.MitmBrowserExecutablePath,
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mitm-browser-profile"));
+        });
+        services.AddSingleton<MitmProxyService>();
+        services.AddSingleton<LiveMitmFlowProcessor>();
+
+        // CudaProfiler is lazily instantiated only when accessed and CUDA is enabled.
+        // ResourceMonitor will handle the case where it's null.
+        services.AddSingleton(sp => new Lazy<CudaProfiler>(() => new CudaProfiler(), isThreadSafe: true));
+
         services.AddSingleton<ResourceMonitor>();
         services.AddSingleton<LiveMonitorService>();
         services.AddSingleton<IInterceptor, WinDivertInterceptor>();
+        services.AddSingleton<IIngressTrafficWatcher, WinDivertIngressTrafficWatcher>();
         services.AddSingleton<IProcessRunner, ProcessRunner>();
         services.AddSingleton<IFirewallRuleApplier, WindowsFirewallRuleApplier>();
 
