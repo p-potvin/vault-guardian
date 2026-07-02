@@ -207,7 +207,10 @@ public sealed class IngressTrafficStore : IIngressTrafficStore, IAsyncDisposable
             }
 
             var observations = new List<IngressPacketObservation>();
-            foreach (var line in File.ReadLines(archivePath))
+            // The whole file is already in `text` — re-reading with File.ReadLines
+            // would double the disk I/O for large archives.
+            using var reader = new StringReader(text);
+            while (reader.ReadLine() is { } line)
             {
                 if (string.IsNullOrWhiteSpace(line))
                 {

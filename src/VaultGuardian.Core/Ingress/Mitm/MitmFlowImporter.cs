@@ -53,7 +53,9 @@ public sealed class MitmFlowImporter
             }
             catch (JsonException)
             {
-                return new MitmFlowImportBatch(events, currentLineNumber);
+                // Skip the malformed line and keep advancing — returning here would
+                // pin NextLineNumber to this line forever, stalling every future poll.
+                continue;
             }
 
             if (flow != null)

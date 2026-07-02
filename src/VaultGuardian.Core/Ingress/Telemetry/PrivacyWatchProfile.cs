@@ -52,16 +52,30 @@ public static class PrivacySelectorMatcher
         var hits = new List<PrivacyTelemetryHit>();
         foreach (var selector in profile.Selectors.Where(selector => selector.Enabled))
         {
-            var matched = selector.Kind switch
+            bool matched;
+            try
             {
-                PrivacySelectorKind.Literal => text.Contains(selector.Value, StringComparison.OrdinalIgnoreCase),
-                PrivacySelectorKind.Regex => Regex.IsMatch(
-                    text,
-                    selector.Value,
-                    RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
-                    TimeSpan.FromMilliseconds(250)),
-                _ => false
-            };
+                matched = selector.Kind switch
+                {
+                    PrivacySelectorKind.Literal => text.Contains(selector.Value, StringComparison.OrdinalIgnoreCase),
+                    PrivacySelectorKind.Regex => Regex.IsMatch(
+                        text,
+                        selector.Value,
+                        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
+                        TimeSpan.FromMilliseconds(250)),
+                    _ => false
+                };
+            }
+            catch (ArgumentException)
+            {
+                // User-supplied selector.Value isn't a valid regex; treat as no match
+                // rather than tearing down the entire selector loop.
+                matched = false;
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                matched = false;
+            }
 
             if (!matched)
             {
@@ -89,11 +103,22 @@ public static class PrivacySelectorMatcher
             return text.Replace(selector.Value, "[redacted]", StringComparison.OrdinalIgnoreCase);
         }
 
-        return Regex.Replace(
-            text,
-            selector.Value,
-            "[redacted]",
-            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
-            TimeSpan.FromMilliseconds(250));
+        try
+        {
+            return Regex.Replace(
+                text,
+                selector.Value,
+                "[redacted]",
+                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
+                TimeSpan.FromMilliseconds(250));
+        }
+        catch (ArgumentException)
+        {
+            return "[redacted]";
+        }
+        catch (RegexMatchTimeoutException)
+        {
+            return "[redacted]";
+        }
     }
 }

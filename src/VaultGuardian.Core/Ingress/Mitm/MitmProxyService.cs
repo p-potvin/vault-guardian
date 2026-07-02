@@ -110,9 +110,21 @@ public sealed class MitmProxyService
                     $"vaultguardian_flow_path={_options.FlowExportPath}"
                 ]);
 
-            _browserProcess = _processLauncher.Start(
-                _options.BrowserExecutablePath,
-                [$"--user-data-dir={_options.BrowserProfilePath}", $"--proxy-server=http://127.0.0.1:{_options.ListenPort}", "--no-first-run"]);
+            try
+            {
+                _browserProcess = _processLauncher.Start(
+                    _options.BrowserExecutablePath,
+                    [$"--user-data-dir={_options.BrowserProfilePath}", $"--proxy-server=http://127.0.0.1:{_options.ListenPort}", "--no-first-run"]);
+            }
+            catch
+            {
+                // Browser start failed after mitmdump was already launched — tear it
+                // down so we don't leak an orphaned proxy on the listen port.
+                _mitmProcess?.Stop();
+                _mitmProcess?.Dispose();
+                _mitmProcess = null;
+                throw;
+            }
 
             _status = _status with { State = MitmProxyState.Running };
             await Task.CompletedTask.ConfigureAwait(false);

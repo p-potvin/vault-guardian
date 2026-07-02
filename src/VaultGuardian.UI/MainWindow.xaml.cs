@@ -25,6 +25,7 @@ public sealed partial class MainWindow : Window
     private List<IngressFlowSummary> _visibleIngressFlows = [];
     private IngressFlowSummary? _selectedIngressFlow;
     private IngressWatcherStatus _lastIngressStatus = IngressWatcherStatus.Stopped;
+    private string _lastIngressListSignature = string.Empty;
 
     public MainWindow(
         LiveMonitorService monitor,
@@ -182,7 +183,15 @@ public sealed partial class MainWindow : Window
             .OrderByDescending(flow => flow.LastSeen)
             .ToList();
 
-        IngressSourceList.ItemsSource = _visibleIngressFlows.Select(FormatIngressFlowListItem).ToArray();
+        // Only rebind ItemsSource when the visible set actually changed. Reassigning
+        // every tick recreates the ListView item containers, causing scroll reset,
+        // visible flicker, and unnecessary CPU on the timer thread.
+        var signature = BuildIngressListSignature(_visibleIngressFlows);
+        if (!string.Equals(signature, _lastIngressListSignature, StringComparison.Ordinal))
+        {
+            _lastIngressListSignature = signature;
+            IngressSourceList.ItemsSource = _visibleIngressFlows.Select(FormatIngressFlowListItem).ToArray();
+        }
 
         if (_visibleIngressFlows.Count == 0)
         {
@@ -200,6 +209,17 @@ public sealed partial class MainWindow : Window
         IngressSourceList.SelectedIndex = selectedIndex >= 0 ? selectedIndex : 0;
         _selectedIngressFlow = _visibleIngressFlows[IngressSourceList.SelectedIndex];
         RenderIngressFlowDetails(_selectedIngressFlow);
+    }
+
+    private static string BuildIngressListSignature(IReadOnlyList<IngressFlowSummary> flows)
+    {
+        if (flows.Count == 0) return string.Empty;
+        var sb = new System.Text.StringBuilder(flows.Count * 32);
+        foreach (var flow in flows)
+        {
+            sb.Append(flow.Key).Append('@').Append(flow.LastSeen.UtcTicks).Append('|');
+        }
+        return sb.ToString();
     }
 
     private void OnIngressSourceSelectionChanged(object sender, SelectionChangedEventArgs e)

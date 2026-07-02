@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -32,12 +33,15 @@ public sealed class PrivacyTelemetryStore
                 Directory.CreateDirectory(directory);
             }
 
+            // Batch to a single append so we're not opening/closing the file per hit.
+            var buffer = new StringBuilder();
             foreach (var hit in newHits)
             {
                 _hits.Add(hit);
                 var line = JsonSerializer.Serialize(hit, PrivacyTelemetryJsonContext.Default.PrivacyTelemetryHit);
-                await File.AppendAllTextAsync(_path, line + Environment.NewLine, cancellationToken).ConfigureAwait(false);
+                buffer.Append(line).Append(Environment.NewLine);
             }
+            await File.AppendAllTextAsync(_path, buffer.ToString(), cancellationToken).ConfigureAwait(false);
         }
         finally
         {
@@ -73,7 +77,18 @@ public sealed class PrivacyTelemetryStore
                 continue;
             }
 
-            var hit = JsonSerializer.Deserialize(line, PrivacyTelemetryJsonContext.Default.PrivacyTelemetryHit);
+            // A malformed line here used to crash app startup because the store is
+            // constructed as a singleton — skip and keep loading.
+            PrivacyTelemetryHit? hit;
+            try
+            {
+                hit = JsonSerializer.Deserialize(line, PrivacyTelemetryJsonContext.Default.PrivacyTelemetryHit);
+            }
+            catch (JsonException)
+            {
+                continue;
+            }
+
             if (hit != null)
             {
                 hits.Add(hit);

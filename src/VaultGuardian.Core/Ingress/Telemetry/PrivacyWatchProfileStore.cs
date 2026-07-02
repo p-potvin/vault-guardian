@@ -23,7 +23,9 @@ public sealed class PrivacyWatchProfileStore
 
         var json = await File.ReadAllTextAsync(_path, cancellationToken).ConfigureAwait(false);
         var stored = JsonSerializer.Deserialize(json, PrivacyWatchProfileJsonContext.Default.StoredPrivacyWatchProfile);
-        if (stored == null)
+        // A file containing `{}` deserializes to a non-null record whose Selectors
+        // list is null; enumerating it directly would NRE.
+        if (stored?.Selectors == null)
         {
             return PrivacyWatchProfile.Empty;
         }
