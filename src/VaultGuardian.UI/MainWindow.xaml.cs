@@ -70,7 +70,7 @@ public sealed partial class MainWindow : Window
 
     private void OnTick(DispatcherQueueTimer sender, object args)
     {
-        var metrics = _monitor.GetLatestMetrics();
+        var metrics = _monitor.GetSnapshot();
 
         double sentMbps = (metrics.Traffic.TotalBytesSent * 8.0) / 1024 / 1024;
         double recvMbps = (metrics.Traffic.TotalBytesRecv * 8.0) / 1024 / 1024;

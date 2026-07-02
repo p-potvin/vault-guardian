@@ -5,7 +5,7 @@ using VaultGuardian.Core.Ingress.Tracing;
 
 namespace VaultGuardian.Core.Observability;
 
-public sealed class LiveMonitorService : IDisposable
+public sealed class LiveMonitorService : IDisposable, IAsyncDisposable
 {
     private readonly ResourceMonitor _resourceMonitor;
     private readonly TrafficStats _trafficStats;
@@ -34,12 +34,19 @@ public sealed class LiveMonitorService : IDisposable
         _fullTraceManager = fullTraceManager;
         _mitmProxyService = mitmProxyService;
         _liveMitmFlowProcessor = liveMitmFlowProcessor;
+
+        // Kick off the background mitm-flow processor so the UI-thread accessor below
+        // stays pure. The loop is torn down in DisposeAsync.
+        _liveMitmFlowProcessor?.Start();
     }
 
-    public AggregateMetrics GetLatestMetrics()
+    /// <summary>
+    /// Returns a pure read of the latest metrics snapshot. No I/O, no side effects —
+    /// safe to call every UI tick. Background flow ingestion runs independently via
+    /// <see cref="LiveMitmFlowProcessor"/>.
+    /// </summary>
+    public AggregateMetrics GetSnapshot()
     {
-        _liveMitmFlowProcessor?.ProcessNewFlows();
-
         return new AggregateMetrics(
             _resourceMonitor.GetCurrentMetrics(),
             _trafficStats.GetSnapshot(),
@@ -53,6 +60,22 @@ public sealed class LiveMonitorService : IDisposable
 
     public void Dispose()
     {
+        // Best-effort synchronous teardown of the background loop for callers that
+        // can't use await. Prefer DisposeAsync when possible.
+        if (_liveMitmFlowProcessor != null)
+        {
+            try { _liveMitmFlowProcessor.StopAsync().GetAwaiter().GetResult(); }
+            catch { }
+        }
+        _resourceMonitor.Dispose();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_liveMitmFlowProcessor != null)
+        {
+            await _liveMitmFlowProcessor.StopAsync().ConfigureAwait(false);
+        }
         _resourceMonitor.Dispose();
     }
 }

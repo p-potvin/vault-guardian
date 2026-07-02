@@ -8,7 +8,7 @@ namespace VaultGuardian.Core.Tests;
 public sealed class LiveMitmFlowProcessorTests
 {
     [Fact]
-    public async Task ProcessNewFlows_AppendsPrivacyHitsAndUpdatesImportedFlowCount()
+    public async Task ProcessNewFlowsAsync_AppendsPrivacyHitsAndUpdatesImportedFlowCount()
     {
         var tempRoot = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}-live-mitm");
         Directory.CreateDirectory(tempRoot);
@@ -36,8 +36,8 @@ public sealed class LiveMitmFlowProcessorTests
             telemetryStore,
             new FullTraceManager());
 
-        processor.ProcessNewFlows();
-        processor.ProcessNewFlows();
+        await processor.ProcessNewFlowsAsync();
+        await processor.ProcessNewFlowsAsync();
 
         var hit = Assert.Single(telemetryStore.ListRecent());
         Assert.Equal("email.primary", hit.SelectorLabel);
