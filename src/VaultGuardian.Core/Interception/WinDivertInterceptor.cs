@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Net;
 using Microsoft.Extensions.Logging;
+using VaultGuardian.Core.Ingress.Hostname;
 using VaultGuardian.Core.Observability;
 using WindivertDotnet;
 
@@ -11,18 +12,21 @@ public sealed class WinDivertInterceptor : IInterceptor
     private readonly RuleDecisionEngine _engine;
     private readonly ILogger<WinDivertInterceptor> _logger;
     private readonly TrafficStats _stats;
+    private readonly IHostnameResolver _hostnameResolver;
     private readonly WinDivert _divert;
     private Task? _runTask;
     private CancellationTokenSource? _cts;
 
     public WinDivertInterceptor(
-        RuleDecisionEngine engine, 
+        RuleDecisionEngine engine,
         ILogger<WinDivertInterceptor> logger,
-        TrafficStats stats)
+        TrafficStats stats,
+        IHostnameResolver hostnameResolver)
     {
         _engine = engine;
         _logger = logger;
         _stats = stats;
+        _hostnameResolver = hostnameResolver;
         // outbound traffic only, Using Flow layer to get ProcessId reliably
         _divert = new WinDivert("outbound", WinDivertLayer.Flow);
     }
@@ -101,10 +105,14 @@ public sealed class WinDivertInterceptor : IInterceptor
             catch { /* Process exited or access denied */ }
         }
 
+        // Non-MITM hostname policy: annotate the flow with any hostname learned
+        // passively from DNS/SNI so rules can match on host without decrypting TLS.
+        var remoteHost = _hostnameResolver.TryResolve(remoteAddr, out var host) ? host : null;
+
         return new TrafficObservation(
             processName,
             processPath,
-            null,
+            remoteHost,
             remoteAddr,
             remotePort,
             protocol);

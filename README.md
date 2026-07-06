@@ -95,8 +95,33 @@ The first code baseline is now in place:
 
 1. Add policy ingestion from WFP/WinDivert telemetry adapters into the core
    decision engine (process + host/IP + port).
-2. Build the first WinUI 3 shell (monitored apps view, recent egress, block/unblock).
-3. Add theming/branding integration using `p-potvin/vaultwares-themes` as source of truth:
-   - token references from `brand/tokens/tokens.ts`
-   - bilingual copy parity from `brand/i18n/brand.i18n.ts`
-   - logo and asset usage guidance from `assets/README.md` and `brand/brand-guide.md`
+2. ✅ Build the first WinUI 3 shell (monitored apps view, recent egress, block/unblock).
+3. ✅ Theming/branding integration using `p-potvin/vaultwares-themes`
+   (`vaultwares-revisited` "Terminal and Document" system):
+   - Warm document frame (parchment header/nav) wrapping the Console operational
+     core, both coexisting per the source-of-truth philosophy — see
+     `src/VaultGuardian.UI/Themes/VaultRedesign.xaml`.
+   - Bilingual brand copy (English / Français QC) from `assets/brand.i18n.ts`,
+     ported to `src/VaultGuardian.Core/Branding/BrandStrings.cs`, selectable in Settings.
+   - Logo asset wired into the warm header (`Assets/vaultwares-logo.png`).
+
+### Implemented since
+
+- **DNS/SNI hostname correlation (non-MITM path).** Passive resolver under
+  `src/VaultGuardian.Core/Ingress/Hostname/` parses DNS answers and TLS SNI to
+  build a bounded, TTL-expiring address→hostname map. Two live feeds populate it:
+  the ingress watcher ingests inbound DNS responses, and
+  `WinDivertSniSniffer` passively sniffs outbound TLS ClientHello (port 443,
+  RecvOnly — no traffic is blocked or decrypted) for SNI. The interceptor
+  consults the resolver (via `IHostnameResolver`) to populate
+  `TrafficObservation.RemoteHost`, so egress rules match on hostname without
+  terminating TLS. Toggle: Settings → "Learn hostnames from DNS and TLS SNI".
+
+## Still open (post-MVP hardening)
+
+- **WFP-native filtering** to replace WinDivert for environments that cannot
+  ship a third-party driver.
+- **Privileged policy engine as a Windows service** with local IPC, splitting
+  the firewall applier + interceptor out of the admin UI process.
+- **SNI coverage beyond port 443** (e.g. 8443, QUIC/HTTP-3) if non-standard TLS
+  ports become relevant.

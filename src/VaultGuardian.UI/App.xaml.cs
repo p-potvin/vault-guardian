@@ -12,6 +12,7 @@ using VaultGuardian.Core;
 using VaultGuardian.Core.Diagnostics;
 using VaultGuardian.Core.Firewall;
 using VaultGuardian.Core.Ingress;
+using VaultGuardian.Core.Ingress.Hostname;
 using VaultGuardian.Core.Ingress.Mitm;
 using VaultGuardian.Core.Ingress.Telemetry;
 using VaultGuardian.Core.Ingress.Tracing;
@@ -90,6 +91,20 @@ public partial class App : Application
             logger.LogError(ex, "Failed to start interceptor");
         }
 
+        // Start passive SNI sniffing for the non-MITM hostname policy path.
+        if (settings.EnableHostnameCorrelation)
+        {
+            var sniffer = ServiceProvider.GetRequiredService<IHostnameSniffer>();
+            try
+            {
+                await sniffer.StartAsync(CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to start hostname (SNI) sniffer");
+            }
+        }
+
         TrayIcon = CreateTrayIcon();
 
         MainAppWindow = ServiceProvider.GetRequiredService<MainWindow>();
@@ -160,6 +175,13 @@ public partial class App : Application
 
             try
             {
+                var sniffer = ServiceProvider.GetService<IHostnameSniffer>();
+                if (sniffer != null) await sniffer.DisposeAsync();
+            }
+            catch { }
+
+            try
+            {
                 var ingressWatcher = ServiceProvider.GetService<IIngressTrafficWatcher>();
                 if (ingressWatcher != null) await ingressWatcher.DisposeAsync();
             }
@@ -200,8 +222,10 @@ public partial class App : Application
         menu.Items.Add(new MenuFlyoutSeparator());
 
         var about = new MenuFlyoutItem { Text = "About" };
+        var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+        var versionText = version is null ? "1.1" : $"{version.Major}.{version.Minor}.{version.Build}";
         about.Click += (_, _) => SafeOnUiThread(() => ShowInfoDialogAsync(
-            "VaultGuardian v1.0\nSecure Performance Monitor\nBuilt with .NET 10 + WinUI 3", "About VaultGuardian"));
+            $"VaultGuardian v{versionText}\nSecure Performance Monitor\nBuilt with .NET 10 + WinUI 3", "About VaultGuardian"));
         menu.Items.Add(about);
 
         var help = new MenuFlyoutItem { Text = "Help" };
@@ -273,6 +297,12 @@ public partial class App : Application
         services.AddSingleton(new RuleDecisionEngine([]));
 
         services.AddSingleton<TrafficStats>();
+
+        // Passive hostname resolution (DNS + SNI) shared by the ingress watcher
+        // (write side) and the interceptor (read side, via IHostnameResolver).
+        services.AddSingleton<HostnameResolutionStore>();
+        services.AddSingleton<IHostnameResolver>(sp => sp.GetRequiredService<HostnameResolutionStore>());
+
         services.AddSingleton<IIngressTrafficStore>(_ =>
             new IngressTrafficStore(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ingress-archive.json")));
         services.AddSingleton<PrivacyWatchProfileStore>(_ =>
@@ -302,6 +332,7 @@ public partial class App : Application
         services.AddSingleton<LiveMonitorService>();
         services.AddSingleton<IInterceptor, WinDivertInterceptor>();
         services.AddSingleton<IIngressTrafficWatcher, WinDivertIngressTrafficWatcher>();
+        services.AddSingleton<IHostnameSniffer, WinDivertSniSniffer>();
         services.AddSingleton<IProcessRunner, ProcessRunner>();
         services.AddSingleton<IFirewallRuleApplier, WindowsFirewallRuleApplier>();
 

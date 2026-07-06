@@ -26,8 +26,25 @@ public sealed partial class SettingsWindow : Window
         LaunchAtStartupSwitch.IsOn = IsRegisteredForStartup();
         MinimizeToTraySwitch.IsOn = _settings.MinimizeToTrayOnClose;
         ShowOverlayOnStartSwitch.IsOn = _settings.ShowOverlayOnStart;
+        HostnameCorrelationSwitch.IsOn = _settings.EnableHostnameCorrelation;
         RefreshSlider.Value = _settings.RefreshIntervalMs;
         UpdateRefreshLabel(_settings.RefreshIntervalMs);
+        SelectLanguage(_settings.Language);
+    }
+
+    private void SelectLanguage(string language)
+    {
+        foreach (var item in LanguageCombo.Items)
+        {
+            if (item is Microsoft.UI.Xaml.Controls.ComboBoxItem cbi &&
+                string.Equals(cbi.Tag as string, language, StringComparison.OrdinalIgnoreCase))
+            {
+                LanguageCombo.SelectedItem = cbi;
+                return;
+            }
+        }
+
+        LanguageCombo.SelectedIndex = 0;
     }
 
     private void OnRefreshSliderChanged(object sender, RangeBaseValueChangedEventArgs e)
@@ -44,6 +61,12 @@ public sealed partial class SettingsWindow : Window
         _settings.RefreshIntervalMs = (int)RefreshSlider.Value;
         _settings.MinimizeToTrayOnClose = MinimizeToTraySwitch.IsOn;
         _settings.ShowOverlayOnStart = ShowOverlayOnStartSwitch.IsOn;
+        _settings.EnableHostnameCorrelation = HostnameCorrelationSwitch.IsOn;
+
+        if ((LanguageCombo.SelectedItem as Microsoft.UI.Xaml.Controls.ComboBoxItem)?.Tag is string lang)
+        {
+            _settings.Language = lang;
+        }
 
         ApplyStartupRegistration(LaunchAtStartupSwitch.IsOn);
 

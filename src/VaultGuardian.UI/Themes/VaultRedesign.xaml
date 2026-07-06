@@ -20,6 +20,32 @@
     <SolidColorBrush x:Key="ConsoleGoldBrush" Color="#D6A441"/>
     <SolidColorBrush x:Key="ConsoleVioletBrush" Color="#B07CFF"/>
 
+    <!--
+        Warm Mode / Document State surfaces. Per the "Terminal and Document"
+        philosophy, Warm and Console coexist: the warm parchment frame (header,
+        navigation, read-only surfaces) wraps the dark console operational core.
+        Values are sourced from vaultwares-themes operational.warm tokens.
+    -->
+    <SolidColorBrush x:Key="WarmBgBrush" Color="#F5F1E8"/>
+    <SolidColorBrush x:Key="WarmRaisedBrush" Color="#FCFAF5"/>
+    <SolidColorBrush x:Key="WarmMutedBrush" Color="#ECE5D8"/>
+    <SolidColorBrush x:Key="WarmBorderBrush" Color="#14161320"/>
+    <SolidColorBrush x:Key="WarmPrimaryTextBrush" Color="#161320"/>
+    <SolidColorBrush x:Key="WarmSecondaryTextBrush" Color="#746C82"/>
+    <SolidColorBrush x:Key="WarmGoldBrush" Color="#CC9B21"/>
+
+    <!-- Shell backgrounds: warm frame (parchment + golden bleed) and console core (violet + aubergine) -->
+    <LinearGradientBrush x:Key="WarmShellBackgroundBrush" StartPoint="0.16,0" EndPoint="0.6,1">
+        <GradientStop Color="#FBF3E2" Offset="0"/>
+        <GradientStop Color="#F5F1E8" Offset="0.45"/>
+        <GradientStop Color="#EFEADD" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="ConsoleShellBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#1A1230" Offset="0"/>
+        <GradientStop Color="#13101c" Offset="0.55"/>
+        <GradientStop Color="#0b0813" Offset="1"/>
+    </LinearGradientBrush>
+
     <!-- Text hierarchy -->
     <SolidColorBrush x:Key="PrimaryTextBrush" Color="#EDE6FF"/>
     <SolidColorBrush x:Key="SecondaryTextBrush" Color="#a394cc"/>

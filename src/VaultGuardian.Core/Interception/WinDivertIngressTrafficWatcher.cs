@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Runtime.Versioning;
 using Microsoft.Extensions.Logging;
 using VaultGuardian.Core.Ingress;
+using VaultGuardian.Core.Ingress.Hostname;
 using VaultGuardian.Core.Observability;
 using WindivertDotnet;
 
@@ -10,9 +11,12 @@ namespace VaultGuardian.Core.Interception;
 [SupportedOSPlatform("windows")]
 public sealed class WinDivertIngressTrafficWatcher : IIngressTrafficWatcher
 {
+    private const int DnsPort = 53;
+
     private readonly IIngressTrafficStore _store;
     private readonly ILogger<WinDivertIngressTrafficWatcher> _logger;
     private readonly TrafficStats? _trafficStats;
+    private readonly HostnameResolutionStore? _hostnameStore;
     private readonly IngressFlowCorrelator _correlator = new();
     private readonly IngressCaptureLimiter _captureLimiter;
     private WinDivert? _flowDivert;
@@ -27,12 +31,14 @@ public sealed class WinDivertIngressTrafficWatcher : IIngressTrafficWatcher
         IIngressTrafficStore store,
         ILogger<WinDivertIngressTrafficWatcher> logger,
         TrafficStats? trafficStats = null,
-        IngressCaptureLimiter? captureLimiter = null)
+        IngressCaptureLimiter? captureLimiter = null,
+        HostnameResolutionStore? hostnameStore = null)
     {
         _store = store;
         _logger = logger;
         _trafficStats = trafficStats;
         _captureLimiter = captureLimiter ?? new IngressCaptureLimiter();
+        _hostnameStore = hostnameStore;
     }
 
     public event EventHandler<IngressPacketObservation>? ObservationReceived;
@@ -197,6 +203,24 @@ public sealed class WinDivertIngressTrafficWatcher : IIngressTrafficWatcher
                                ProcessPath: "Unknown");
 
                 var payload = parseResult.DataLength > 0 ? parseResult.DataSpan.ToArray() : [];
+
+                // Passive hostname learning: inbound UDP from port 53 is a DNS
+                // response. Feed it to the resolver so egress rules can match host.
+                if (_hostnameStore != null &&
+                    packetInfo.Protocol == TrafficProtocol.Udp &&
+                    packetInfo.RemotePort == DnsPort &&
+                    payload.Length > 0)
+                {
+                    try
+                    {
+                        _hostnameStore.IngestDnsResponse(payload);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogDebug(ex, "Failed to ingest a DNS response for hostname correlation");
+                    }
+                }
+
                 var sample = payload.Length > 0
                     ? IngressPayloadClassifier.ClassifyAndSample(payload, DateTimeOffset.UtcNow)
                     : null;

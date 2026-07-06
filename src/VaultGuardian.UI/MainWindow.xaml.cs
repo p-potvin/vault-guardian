@@ -7,6 +7,7 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using VaultGuardian.Core;
+using VaultGuardian.Core.Branding;
 using VaultGuardian.Core.Ingress;
 using VaultGuardian.Core.Ingress.Mitm;
 using VaultGuardian.Core.Ingress.Tracing;
@@ -42,6 +43,7 @@ public sealed partial class MainWindow : Window
 
         InitializeComponent();
         Title = "VaultGuardian";
+        ApplyBrandCopy();
 
         _timer = DispatcherQueue.CreateTimer();
         _timer.Interval = TimeSpan.FromMilliseconds(_settings.RefreshIntervalMs);
@@ -66,6 +68,13 @@ public sealed partial class MainWindow : Window
     private void OnSettingsChanged(object? sender, EventArgs e)
     {
         _timer.Interval = TimeSpan.FromMilliseconds(Math.Max(100, _settings.RefreshIntervalMs));
+        ApplyBrandCopy();
+    }
+
+    private void ApplyBrandCopy()
+    {
+        var strings = BrandStrings.For(_settings.Language);
+        BrandTaglineText.Text = strings.Tagline;
     }
 
     private void OnTick(DispatcherQueueTimer sender, object args)
