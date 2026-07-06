@@ -116,6 +116,12 @@ The first code baseline is now in place:
   consults the resolver (via `IHostnameResolver`) to populate
   `TrafficObservation.RemoteHost`, so egress rules match on hostname without
   terminating TLS. Toggle: Settings → "Learn hostnames from DNS and TLS SNI".
+- **JA4 TLS client fingerprinting.** `Ja4Calculator` computes the FoxIO JA4
+  fingerprint from each ClientHello (transport + version + SNI flag + cipher/
+  extension counts + ALPN, then truncated SHA-256 of sorted cipher suites and of
+  sorted extensions with signature algorithms). The fingerprint identifies the
+  client stack (browser/library/malware) independent of hostname or destination
+  IP, and is recorded on each SNI-sourced resolution (`HostnameResolution.Ja4`).
 
 ## Still open (post-MVP hardening)
 

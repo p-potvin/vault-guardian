@@ -37,7 +37,10 @@ public sealed class HostnameResolutionStore : IHostnameResolver
         return records.Count;
     }
 
-    /// <summary>Feeds an outbound TLS ClientHello, associating its SNI with the destination address.</summary>
+    /// <summary>
+    /// Feeds an outbound TLS ClientHello, associating its SNI with the destination
+    /// address and recording the JA4 client fingerprint alongside it.
+    /// </summary>
     public bool IngestTlsClientHello(string destinationAddress, ReadOnlySpan<byte> tlsRecord)
     {
         if (string.IsNullOrWhiteSpace(destinationAddress))
@@ -45,12 +48,15 @@ public sealed class HostnameResolutionStore : IHostnameResolver
             return false;
         }
 
-        if (!TlsClientHelloParser.TryParseServerName(tlsRecord, out var serverName))
+        if (!TlsClientHelloParser.TryParse(tlsRecord, out var hello) ||
+            !hello.HasServerName ||
+            string.IsNullOrWhiteSpace(hello.ServerName))
         {
             return false;
         }
 
-        Set(destinationAddress, serverName, HostnameSource.Sni, SniTtl);
+        var ja4 = Ja4Calculator.Compute(hello);
+        Set(destinationAddress, hello.ServerName, HostnameSource.Sni, SniTtl, ja4);
         return true;
     }
 
@@ -97,7 +103,7 @@ public sealed class HostnameResolutionStore : IHostnameResolver
         return live;
     }
 
-    private void Set(string address, string hostname, HostnameSource source, TimeSpan ttl)
+    private void Set(string address, string hostname, HostnameSource source, TimeSpan ttl, string? ja4 = null)
     {
         if (string.IsNullOrWhiteSpace(address) || string.IsNullOrWhiteSpace(hostname))
         {
@@ -105,7 +111,7 @@ public sealed class HostnameResolutionStore : IHostnameResolver
         }
 
         var now = _clock.GetUtcNow();
-        _map[address] = new HostnameResolution(address, hostname, source, now, now + ttl);
+        _map[address] = new HostnameResolution(address, hostname, source, now, now + ttl, ja4);
 
         if (_map.Count > _capacity)
         {

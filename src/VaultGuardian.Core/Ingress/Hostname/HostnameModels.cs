@@ -16,7 +16,8 @@ public sealed record HostnameResolution(
     string Hostname,
     HostnameSource Source,
     DateTimeOffset ResolvedAt,
-    DateTimeOffset ExpiresAt);
+    DateTimeOffset ExpiresAt,
+    string? Ja4 = null);
 
 /// <summary>A single address record parsed out of a DNS answer section.</summary>
 public sealed record DnsAddressRecord(
