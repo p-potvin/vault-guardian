@@ -18,6 +18,7 @@ using VaultGuardian.Core.Ingress.Telemetry;
 using VaultGuardian.Core.Ingress.Tracing;
 using VaultGuardian.Core.Interception;
 using VaultGuardian.Core.Observability;
+using VaultGuardian.Core.Processes;
 
 namespace VaultGuardian.UI;
 
@@ -333,6 +334,7 @@ public partial class App : Application
         services.AddSingleton<IInterceptor, WinDivertInterceptor>();
         services.AddSingleton<IIngressTrafficWatcher, WinDivertIngressTrafficWatcher>();
         services.AddSingleton<IHostnameSniffer, WinDivertSniSniffer>();
+        services.AddSingleton<IProcessInspector, WindowsProcessInspector>();
         services.AddSingleton<IProcessRunner, ProcessRunner>();
         services.AddSingleton<IFirewallRuleApplier, WindowsFirewallRuleApplier>();
 

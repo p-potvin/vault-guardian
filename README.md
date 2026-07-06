@@ -122,6 +122,17 @@ The first code baseline is now in place:
   sorted extensions with signature algorithms). The fingerprint identifies the
   client stack (browser/library/malware) independent of hostname or destination
   IP, and is recorded on each SNI-sourced resolution (`HostnameResolution.Ja4`).
+- **Process triage console.** `WindowsProcessInspector` enumerates processes and
+  fuses CPU sampling, image path / parent / hosted services (WMI), Authenticode
+  trust, and the kernel critical-process bit into `ProcessFacts`;
+  `ProcessTriageClassifier` (pure, unit-tested) tags each with a disposition
+  (Legit/Unknown/Suspicious) and a kill-safety rating (Safe / Risky — disrupts
+  services / Breaks Windows), with reasons. Surfaces svchost→service expansion
+  and flags Hyper-V utility-VM aggregates (WSL2 `vmmem`) that hide their real
+  consumers. The Processes pivot lists them by cost with a guarded Terminate
+  (risk-scaled confirmation). Lets the operator act fast instead of retracing the
+  tree in Process Explorer. Future: correlate per-process network hostnames/JA4
+  into the triage row (the classifier already accepts them).
 
 ## Still open (post-MVP hardening)
 

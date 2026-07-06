@@ -42,7 +42,7 @@
                     BorderThickness="1"
                     CornerRadius="{StaticResource CardCornerRadius}"
                     Padding="16,8,16,16">
-            <Pivot Background="Transparent">
+            <Pivot x:Name="MainPivot" SelectionChanged="OnPivotChanged" Background="Transparent">
                 <PivotItem Header="Dashboard">
                     <Grid Margin="0,12,0,0">
                         <Grid.ColumnDefinitions>
@@ -483,6 +483,107 @@
                                   BorderBrush="{StaticResource ConsoleBorderBrush}"
                                   BorderThickness="1"
                                   Margin="0,0,20,20"/>
+                    </Grid>
+                </PivotItem>
+
+                <PivotItem Header="Processes">
+                    <Grid Margin="0,12,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                <TextBlock Text="Process Triage" FontSize="18" FontWeight="SemiBold"
+                                           Foreground="{StaticResource PrimaryTextBrush}"/>
+                                <TextBlock x:Name="ProcessStatusText"
+                                           Text="Expensive and hidden processes, tagged by shutdown risk."
+                                           Foreground="{StaticResource SecondaryTextBrush}" FontSize="12"/>
+                            </StackPanel>
+                            <Button Grid.Column="1" Content="Refresh" Click="OnRefreshProcessesClick"
+                                    Padding="18,8"
+                                    Background="{StaticResource ConsoleGoldBrush}"
+                                    Foreground="#1A1230" FontWeight="SemiBold"
+                                    BorderThickness="0" CornerRadius="10" VerticalAlignment="Center"/>
+                        </Grid>
+
+                        <Border Grid.Row="1"
+                                Background="{StaticResource ConsoleRaisedBrush}"
+                                BorderBrush="{StaticResource ConsoleBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="{StaticResource CardCornerRadius}"
+                                Padding="8">
+                            <ListView x:Name="ProcessList"
+                                      SelectionChanged="OnProcessSelectionChanged"
+                                      Background="Transparent"
+                                      Foreground="{StaticResource PrimaryTextBrush}">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate x:DataType="local:ProcessRowVM">
+                                        <Grid Padding="6,8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="2.2*"/>
+                                                <ColumnDefinition Width="0.8*"/>
+                                                <ColumnDefinition Width="0.9*"/>
+                                                <ColumnDefinition Width="1*"/>
+                                                <ColumnDefinition Width="1.6*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="{x:Bind Display}"
+                                                       Foreground="{StaticResource PrimaryTextBrush}"
+                                                       FontFamily="{StaticResource VaultMonoFontFamily}" FontSize="12"
+                                                       TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1" Text="{x:Bind Cpu}"
+                                                       Foreground="{StaticResource SecondaryTextBrush}"
+                                                       FontFamily="{StaticResource VaultMonoFontFamily}" FontSize="12"
+                                                       VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="2" Text="{x:Bind Memory}"
+                                                       Foreground="{StaticResource SecondaryTextBrush}"
+                                                       FontFamily="{StaticResource VaultMonoFontFamily}" FontSize="12"
+                                                       VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="3" Text="{x:Bind Disposition}"
+                                                       Foreground="{x:Bind DispositionBrush}"
+                                                       FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="4" Text="{x:Bind KillSafety}"
+                                                       Foreground="{x:Bind KillSafetyBrush}"
+                                                       FontSize="12" VerticalAlignment="Center"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </Border>
+
+                        <Border Grid.Row="2"
+                                Background="{StaticResource ConsoleSurfaceBrush}"
+                                BorderBrush="{StaticResource ConsoleBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="{StaticResource PanelCornerRadius}"
+                                Padding="16" Margin="0,12,0,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock x:Name="ProcessReasonsText" Grid.Column="0"
+                                           Text="Select a process to see why it was tagged."
+                                           Foreground="{StaticResource SecondaryTextBrush}"
+                                           FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                <Button x:Name="TerminateProcessButton" Grid.Column="1"
+                                        Content="Terminate" Click="OnTerminateProcessClick"
+                                        IsEnabled="False"
+                                        Padding="16,8" Margin="12,0,0,0"
+                                        Background="Transparent"
+                                        BorderBrush="{StaticResource SignalAlertBrush}"
+                                        BorderThickness="1"
+                                        Foreground="{StaticResource SignalAlertBrush}"
+                                        CornerRadius="10" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
                     </Grid>
                 </PivotItem>
             </Pivot>

@@ -12,6 +12,7 @@ using VaultGuardian.Core.Ingress;
 using VaultGuardian.Core.Ingress.Mitm;
 using VaultGuardian.Core.Ingress.Tracing;
 using VaultGuardian.Core.Observability;
+using VaultGuardian.Core.Processes;
 
 namespace VaultGuardian.UI;
 
@@ -22,7 +23,10 @@ public sealed partial class MainWindow : Window
     private readonly AppSettings _settings;
     private readonly IIngressTrafficStore _ingressStore;
     private readonly MitmProxyService _mitmProxyService;
+    private readonly IProcessInspector _processInspector;
     private readonly DispatcherQueueTimer _timer;
+    private bool _processRefreshInFlight;
+    private int _tickCounter;
     private List<IngressFlowSummary> _visibleIngressFlows = [];
     private IngressFlowSummary? _selectedIngressFlow;
     private IngressWatcherStatus _lastIngressStatus = IngressWatcherStatus.Stopped;
@@ -33,13 +37,15 @@ public sealed partial class MainWindow : Window
         OverlayWindow overlay,
         AppSettings settings,
         IIngressTrafficStore ingressStore,
-        MitmProxyService mitmProxyService)
+        MitmProxyService mitmProxyService,
+        IProcessInspector processInspector)
     {
         _monitor = monitor;
         _overlay = overlay;
         _settings = settings;
         _ingressStore = ingressStore;
         _mitmProxyService = mitmProxyService;
+        _processInspector = processInspector;
 
         InitializeComponent();
         Title = "VaultGuardian";
@@ -137,6 +143,135 @@ public sealed partial class MainWindow : Window
         {
             App.TrayIcon.ToolTipText = $"VG Monitoring\nTraffic: {sentMbps:F1} Mbps Out\nDisk Load: {metrics.Resources.DiskActiveTimePercentage:F0}%";
         }
+
+        // Refresh the process triage list a few seconds apart while its tab is open.
+        _tickCounter++;
+        if (IsProcessesTabSelected() && _tickCounter % 4 == 0)
+        {
+            RefreshProcesses();
+        }
+    }
+
+    private bool IsProcessesTabSelected() =>
+        MainPivot.SelectedItem is PivotItem { Header: "Processes" };
+
+    private void OnPivotChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (IsProcessesTabSelected())
+        {
+            RefreshProcesses();
+        }
+    }
+
+    private void OnRefreshProcessesClick(object sender, RoutedEventArgs e) => RefreshProcesses();
+
+    private void RefreshProcesses()
+    {
+        if (_processRefreshInFlight)
+        {
+            return;
+        }
+
+        _processRefreshInFlight = true;
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                var entries = _processInspector.Snapshot();
+                DispatcherQueue.TryEnqueue(() => ApplyProcessSnapshot(entries));
+            }
+            catch (Exception ex)
+            {
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    ProcessStatusText.Text = $"Process enumeration failed: {ex.Message}";
+                    _processRefreshInFlight = false;
+                });
+            }
+        });
+    }
+
+    private void ApplyProcessSnapshot(IReadOnlyList<ProcessTriageEntry> entries)
+    {
+        var selectedPid = (ProcessList.SelectedItem as ProcessRowVM)?.Pid;
+
+        var rows = entries.Select(entry => new ProcessRowVM(entry)).ToList();
+        ProcessList.ItemsSource = rows;
+
+        if (selectedPid is int pid)
+        {
+            var match = rows.FirstOrDefault(r => r.Pid == pid);
+            if (match != null)
+            {
+                ProcessList.SelectedItem = match;
+            }
+        }
+
+        var suspicious = rows.Count(r => r.Entry.Verdict.Disposition == ProcessDisposition.Suspicious);
+        ProcessStatusText.Text = $"{rows.Count} processes · {suspicious} suspicious · updated {DateTimeOffset.Now:HH:mm:ss}";
+        _processRefreshInFlight = false;
+    }
+
+    private void OnProcessSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (ProcessList.SelectedItem is ProcessRowVM row)
+        {
+            ProcessReasonsText.Text = row.Reasons;
+            TerminateProcessButton.IsEnabled = true;
+        }
+        else
+        {
+            ProcessReasonsText.Text = "Select a process to see why it was tagged.";
+            TerminateProcessButton.IsEnabled = false;
+        }
+    }
+
+    private async void OnTerminateProcessClick(object sender, RoutedEventArgs e)
+    {
+        if (ProcessList.SelectedItem is not ProcessRowVM row)
+        {
+            return;
+        }
+
+        var facts = row.Entry.Facts;
+        var killSafety = row.Entry.Verdict.KillSafety;
+
+        var warning = killSafety switch
+        {
+            KillSafety.BreaksWindows =>
+                "This is an OS-critical process. Terminating it will very likely crash Windows or sign you out.",
+            KillSafety.RiskyToShutdown =>
+                "This process hosts services or a session component. Terminating it may disrupt Windows features.",
+            _ => "This process appears safe to terminate."
+        };
+
+        var dialog = new ContentDialog
+        {
+            XamlRoot = Content.XamlRoot,
+            Title = $"Terminate {facts.Name} (PID {facts.ProcessId})?",
+            Content = $"{warning}\n\n{row.Reasons}",
+            PrimaryButtonText = "Terminate",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close
+        };
+
+        if (await dialog.ShowAsync() != ContentDialogResult.Primary)
+        {
+            return;
+        }
+
+        try
+        {
+            using var process = System.Diagnostics.Process.GetProcessById(facts.ProcessId);
+            process.Kill();
+            ProcessStatusText.Text = $"Terminated {facts.Name} (PID {facts.ProcessId}).";
+        }
+        catch (Exception ex)
+        {
+            ProcessStatusText.Text = $"Could not terminate {facts.Name}: {ex.Message}";
+        }
+
+        RefreshProcesses();
     }
 
     private void UpdateDetailedSubsystemInfo(AggregateMetrics metrics)
