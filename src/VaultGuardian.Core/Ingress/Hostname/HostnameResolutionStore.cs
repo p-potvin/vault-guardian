@@ -60,9 +60,13 @@ public sealed class HostnameResolutionStore : IHostnameResolver
         return true;
     }
 
-    public bool TryResolve(string address, out string hostname)
+    public bool TryResolve(string address, out string hostname) =>
+        TryResolve(address, out hostname, out _);
+
+    public bool TryResolve(string address, out string hostname, out string? ja4)
     {
         hostname = string.Empty;
+        ja4 = null;
         if (string.IsNullOrWhiteSpace(address))
         {
             return false;
@@ -73,6 +77,7 @@ public sealed class HostnameResolutionStore : IHostnameResolver
             if (resolution.ExpiresAt > _clock.GetUtcNow())
             {
                 hostname = resolution.Hostname;
+                ja4 = resolution.Ja4;
                 return true;
             }
 

@@ -1,9 +1,11 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Management;
+using System.Net;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Security.Cryptography.X509Certificates;
+using VaultGuardian.Core.Ingress.Hostname;
 
 namespace VaultGuardian.Core.Processes;
 
@@ -20,16 +22,26 @@ public sealed class WindowsProcessInspector : IProcessInspector
 {
     private const int ProcessQueryLimitedInformation = 0x1000;
     private const int ProcessBreakOnTermination = 29;
+    private const int AfInet = 2;
+    private const int TcpTableOwnerPidAll = 5;
+    private const int MaxEndpointsPerProcess = 6;
 
     private static readonly ConcurrentDictionary<string, (SignatureStatus Status, string? Publisher)> SignatureCache = new();
 
+    private readonly IHostnameResolver _hostnameResolver;
     private readonly object _sampleLock = new();
     private Dictionary<int, (TimeSpan Cpu, DateTimeOffset At)> _previousCpu = new();
+
+    public WindowsProcessInspector(IHostnameResolver hostnameResolver)
+    {
+        _hostnameResolver = hostnameResolver;
+    }
 
     public IReadOnlyList<ProcessTriageEntry> Snapshot(int maxEntries = 150)
     {
         var processMetadata = QueryProcessMetadata();
         var servicesByPid = QueryServicesByPid();
+        var remoteAddressesByPid = QueryTcpRemoteAddressesByPid();
         var processorCount = Math.Max(1, Environment.ProcessorCount);
 
         var nextCpu = new Dictionary<int, (TimeSpan, DateTimeOffset)>();
@@ -50,6 +62,7 @@ public sealed class WindowsProcessInspector : IProcessInspector
 
                 var (signature, publisher) = ResolveSignature(imagePath);
                 servicesByPid.TryGetValue(pid, out var services);
+                var hostnames = ResolveHostnames(pid, remoteAddressesByPid);
 
                 var facts = new ProcessFacts(
                     ProcessId: pid,
@@ -64,7 +77,7 @@ public sealed class WindowsProcessInspector : IProcessInspector
                     IsServiceHost: name.Equals("svchost", StringComparison.OrdinalIgnoreCase),
                     HostedServices: services ?? [],
                     RunsInUtilityVm: IsUtilityVm(name),
-                    Hostnames: []);
+                    Hostnames: hostnames);
 
                 entries.Add(new ProcessTriageEntry(facts, ProcessTriageClassifier.Classify(facts)));
             }
@@ -209,6 +222,95 @@ public sealed class WindowsProcessInspector : IProcessInspector
         return map;
     }
 
+    private IReadOnlyList<string> ResolveHostnames(int pid, Dictionary<int, HashSet<string>> remoteAddressesByPid)
+    {
+        if (!remoteAddressesByPid.TryGetValue(pid, out var addresses) || addresses.Count == 0)
+        {
+            return [];
+        }
+
+        var endpoints = new List<string>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var address in addresses)
+        {
+            if (!_hostnameResolver.TryResolve(address, out var hostname, out var ja4))
+            {
+                continue;
+            }
+
+            var label = string.IsNullOrEmpty(ja4) ? hostname : $"{hostname} [{ja4}]";
+            if (seen.Add(label))
+            {
+                endpoints.Add(label);
+                if (endpoints.Count >= MaxEndpointsPerProcess)
+                {
+                    break;
+                }
+            }
+        }
+
+        return endpoints;
+    }
+
+    // Maps owning PID -> distinct remote IPv4 addresses from the active TCP table.
+    private static Dictionary<int, HashSet<string>> QueryTcpRemoteAddressesByPid()
+    {
+        var map = new Dictionary<int, HashSet<string>>();
+        int bufferSize = 0;
+        GetExtendedTcpTable(IntPtr.Zero, ref bufferSize, false, AfInet, TcpTableOwnerPidAll, 0);
+        if (bufferSize <= 0)
+        {
+            return map;
+        }
+
+        var buffer = Marshal.AllocHGlobal(bufferSize);
+        try
+        {
+            if (GetExtendedTcpTable(buffer, ref bufferSize, false, AfInet, TcpTableOwnerPidAll, 0) != 0)
+            {
+                return map;
+            }
+
+            int entryCount = Marshal.ReadInt32(buffer);
+            int rowOffset = 4; // past dwNumEntries
+            const int rowSize = 24; // MIB_TCPROW_OWNER_PID: 6 x DWORD
+            for (int i = 0; i < entryCount; i++)
+            {
+                int baseOffset = rowOffset + (i * rowSize);
+                int remoteAddr = Marshal.ReadInt32(buffer, baseOffset + 12);
+                int pid = Marshal.ReadInt32(buffer, baseOffset + 20);
+                if (pid <= 0 || remoteAddr == 0)
+                {
+                    continue; // unowned or listening (0.0.0.0) socket
+                }
+
+                var address = new IPAddress(BitConverter.GetBytes(remoteAddr)).ToString();
+                if (address == "0.0.0.0")
+                {
+                    continue;
+                }
+
+                if (!map.TryGetValue(pid, out var set))
+                {
+                    set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    map[pid] = set;
+                }
+
+                set.Add(address);
+            }
+        }
+        catch
+        {
+            // Best-effort: no network attribution when the table can't be read.
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(buffer);
+        }
+
+        return map;
+    }
+
     private static (SignatureStatus, string?) ResolveSignature(string? imagePath)
     {
         if (string.IsNullOrWhiteSpace(imagePath) || !File.Exists(imagePath))
@@ -277,6 +379,15 @@ public sealed class WindowsProcessInspector : IProcessInspector
             return 0;
         }
     }
+
+    [DllImport("iphlpapi.dll", SetLastError = true)]
+    private static extern uint GetExtendedTcpTable(
+        IntPtr tcpTable,
+        ref int tableSize,
+        bool sort,
+        int ipVersion,
+        int tableClass,
+        int reserved);
 
     [DllImport("kernel32.dll", SetLastError = true)]
     private static extern IntPtr OpenProcess(int desiredAccess, bool inheritHandle, int processId);

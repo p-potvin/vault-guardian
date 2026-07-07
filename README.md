@@ -131,8 +131,13 @@ The first code baseline is now in place:
   and flags Hyper-V utility-VM aggregates (WSL2 `vmmem`) that hide their real
   consumers. The Processes pivot lists them by cost with a guarded Terminate
   (risk-scaled confirmation). Lets the operator act fast instead of retracing the
-  tree in Process Explorer. Future: correlate per-process network hostnames/JA4
-  into the triage row (the classifier already accepts them).
+  tree in Process Explorer.
+- **Per-process network attribution.** The inspector joins the active TCP table
+  (`GetExtendedTcpTable`, owning PID → remote IPs) against the passive hostname/
+  JA4 map, so each triage row surfaces the hostnames (and JA4 fingerprint) the
+  process is actually talking to — e.g. an unsigned AppData process beaconing to
+  a telemetry host. This fusion of resource cost + network reputation + signature
+  trust is the signal a process-only tool can't give.
 
 ## Still open (post-MVP hardening)
 

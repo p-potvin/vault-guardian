@@ -12,4 +12,10 @@ public interface IHostnameResolver
     /// address, or <c>false</c> when nothing is known.
     /// </summary>
     bool TryResolve(string address, out string hostname);
+
+    /// <summary>
+    /// Like <see cref="TryResolve(string, out string)"/> but also returns the JA4
+    /// client fingerprint observed for the address, when one is known.
+    /// </summary>
+    bool TryResolve(string address, out string hostname, out string? ja4);
 }

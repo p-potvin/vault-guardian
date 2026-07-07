@@ -43,6 +43,17 @@ public sealed class Ja4Tests
         Assert.StartsWith("t13d0204h2_", entry.Ja4);
     }
 
+    [Fact]
+    public void Resolver_ReturnsJa4AlongsideHostname()
+    {
+        var store = new HostnameResolutionStore();
+        store.IngestTlsClientHello("203.0.113.50", BuildRichClientHello());
+
+        Assert.True(store.TryResolve("203.0.113.50", out var host, out var ja4));
+        Assert.Equal("example.com", host);
+        Assert.StartsWith("t13d0204h2_", ja4);
+    }
+
     private static byte[] BuildRichClientHello()
     {
         var extensions = new List<byte>();
