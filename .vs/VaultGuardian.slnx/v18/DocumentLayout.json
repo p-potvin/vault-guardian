@@ -3,6 +3,10 @@
   "WorkspaceRootPath": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{CE2E9F9A-D4F4-E5CE-C500-A4A69A6CA952}|src\\VaultGuardian.UI\\VaultGuardian.UI.csproj|c:\\users\\administrator\\desktop\\github repos\\vault-guardian\\src\\vaultguardian.ui\\vaultguardian.ui.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{CE2E9F9A-D4F4-E5CE-C500-A4A69A6CA952}|src\\VaultGuardian.UI\\VaultGuardian.UI.csproj|solutionrelative:src\\vaultguardian.ui\\vaultguardian.ui.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{DB71BBCA-F287-DA38-BA48-79C55435994A}|src\\VaultGuardian.Core\\VaultGuardian.Core.csproj|c:\\users\\administrator\\desktop\\github repos\\vault-guardian\\src\\vaultguardian.core\\firewall\\windowsfirewallruleapplier.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{DB71BBCA-F287-DA38-BA48-79C55435994A}|src\\VaultGuardian.Core\\VaultGuardian.Core.csproj|solutionrelative:src\\vaultguardian.core\\firewall\\windowsfirewallruleapplier.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -13,10 +17,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{B9E31169-E7A2-5247-0A68-F8A5E45FD2CF}|tests\\VaultGuardian.Core.Tests\\VaultGuardian.Core.Tests.csproj|c:\\users\\administrator\\desktop\\github repos\\vault-guardian\\tests\\vaultguardian.core.tests\\windowsfirewallruleappliertests.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{B9E31169-E7A2-5247-0A68-F8A5E45FD2CF}|tests\\VaultGuardian.Core.Tests\\VaultGuardian.Core.Tests.csproj|solutionrelative:tests\\vaultguardian.core.tests\\windowsfirewallruleappliertests.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{CE2E9F9A-D4F4-E5CE-C500-A4A69A6CA952}|src\\VaultGuardian.UI\\VaultGuardian.UI.csproj|c:\\users\\administrator\\desktop\\github repos\\vault-guardian\\src\\vaultguardian.ui\\vaultguardian.ui.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
-      "RelativeMoniker": "D:0:0:{CE2E9F9A-D4F4-E5CE-C500-A4A69A6CA952}|src\\VaultGuardian.UI\\VaultGuardian.UI.csproj|solutionrelative:src\\vaultguardian.ui\\vaultguardian.ui.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
     },
     {
       "AbsoluteMoniker": "D:0:0:{DB71BBCA-F287-DA38-BA48-79C55435994A}|src\\VaultGuardian.Core\\VaultGuardian.Core.csproj|c:\\users\\administrator\\desktop\\github repos\\vault-guardian\\src\\vaultguardian.core\\observability\\trafficstats.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -42,7 +42,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 5,
           "Children": [
             {
               "$type": "Bookmark",
@@ -54,7 +54,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "WindowsFirewallRuleApplier.cs",
               "DocumentMoniker": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.Core\\Firewall\\WindowsFirewallRuleApplier.cs",
               "RelativeDocumentMoniker": "src\\VaultGuardian.Core\\Firewall\\WindowsFirewallRuleApplier.cs",
@@ -68,6 +68,18 @@
             {
               "$type": "Document",
               "DocumentIndex": 2,
+              "Title": "App.xaml",
+              "DocumentMoniker": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.UI\\App.xaml",
+              "RelativeDocumentMoniker": "src\\VaultGuardian.UI\\App.xaml",
+              "ToolTip": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.UI\\App.xaml",
+              "RelativeToolTip": "src\\VaultGuardian.UI\\App.xaml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2026-06-26T21:00:12.994Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
               "Title": "WindowsFirewallRuleApplierTests.cs",
               "DocumentMoniker": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\tests\\VaultGuardian.Core.Tests\\WindowsFirewallRuleApplierTests.cs",
               "RelativeDocumentMoniker": "tests\\VaultGuardian.Core.Tests\\WindowsFirewallRuleApplierTests.cs",
@@ -75,7 +87,19 @@
               "RelativeToolTip": "tests\\VaultGuardian.Core.Tests\\WindowsFirewallRuleApplierTests.cs",
               "ViewState": "AgIAAAoAAAAAAAAAAAA5wBsAAAAeAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-26T20:52:18.075Z",
+              "WhenOpened": "2026-06-26T20:52:18.075Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "VaultGuardian.UI.csproj",
+              "DocumentMoniker": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.UI\\VaultGuardian.UI.csproj",
+              "RelativeDocumentMoniker": "src\\VaultGuardian.UI\\VaultGuardian.UI.csproj",
+              "ToolTip": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.UI\\VaultGuardian.UI.csproj",
+              "RelativeToolTip": "src\\VaultGuardian.UI\\VaultGuardian.UI.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACkAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-05-16T00:32:15.463Z",
               "EditorCaption": ""
             },
             {
@@ -92,19 +116,6 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "App.xaml",
-              "DocumentMoniker": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.UI\\App.xaml",
-              "RelativeDocumentMoniker": "src\\VaultGuardian.UI\\App.xaml",
-              "ToolTip": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.UI\\App.xaml",
-              "RelativeToolTip": "src\\VaultGuardian.UI\\App.xaml",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2026-06-26T21:00:12.994Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 4,
               "Title": "TrafficStats.cs",
               "DocumentMoniker": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.Core\\Observability\\TrafficStats.cs",
@@ -114,19 +125,6 @@
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-05-16T00:32:04.022Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "VaultGuardian.UI.csproj",
-              "DocumentMoniker": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.UI\\VaultGuardian.UI.csproj",
-              "RelativeDocumentMoniker": "src\\VaultGuardian.UI\\VaultGuardian.UI.csproj",
-              "ToolTip": "C:\\Users\\Administrator\\Desktop\\Github Repos\\vault-guardian\\src\\VaultGuardian.UI\\VaultGuardian.UI.csproj",
-              "RelativeToolTip": "src\\VaultGuardian.UI\\VaultGuardian.UI.csproj",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAACkAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2026-05-16T00:32:15.463Z",
-              "EditorCaption": ""
             },
             {
               "$type": "Document",

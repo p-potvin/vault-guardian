@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using VaultGuardian.Core.Ingress;
 using VaultGuardian.Core.Ingress.Hostname;
 using VaultGuardian.Core.Observability;
+using VaultGuardian.Core.Processes;
 using WindivertDotnet;
 
 namespace VaultGuardian.Core.Interception;
@@ -334,20 +335,9 @@ public sealed class WinDivertIngressTrafficWatcher : IIngressTrafficWatcher
 
     private static (string Name, string Path) ResolveProcess(int processId)
     {
-        if (processId <= 0)
-        {
-            return ("Unknown", "Unknown");
-        }
-
-        try
-        {
-            using var process = Process.GetProcessById(processId);
-            return (process.ProcessName, process.MainModule?.FileName ?? "Unknown");
-        }
-        catch
-        {
-            return ("Unknown", "Unknown");
-        }
+        return ProcessImageResolver.TryResolve(processId, out var name, out var path)
+            ? (name, path)
+            : ("Unknown", "Unknown");
     }
 
     private sealed record InboundPacketInfo(

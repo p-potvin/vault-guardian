@@ -91,22 +91,19 @@ The first code baseline is now in place:
 - `tests/VaultGuardian.Core.Tests`: unit tests showing selective blocking (specific
   process + destination) versus default allow behavior
 
-## Next build steps
+## Current state (v1.3.2)
 
-1. Add policy ingestion from WFP/WinDivert telemetry adapters into the core
-   decision engine (process + host/IP + port).
-2. ✅ Build the first WinUI 3 shell (monitored apps view, recent egress, block/unblock).
-3. ✅ Theming/branding integration using `p-potvin/vaultwares-themes`
-   (`vaultwares-revisited` "Terminal and Document" system):
-   - Warm document frame (parchment header/nav) wrapping the Console operational
-     core, both coexisting per the source-of-truth philosophy — see
-     `src/VaultGuardian.UI/Themes/VaultRedesign.xaml`.
-   - Bilingual brand copy (English / Français QC) from `assets/brand.i18n.ts`,
-     ported to `src/VaultGuardian.Core/Branding/BrandStrings.cs`, selectable in Settings.
-   - Logo asset wired into the warm header (`Assets/vaultwares-logo.png`).
+Implemented and covered by the unit suite (80 tests; `dotnet test`):
 
-### Implemented since
-
+- **Selective egress firewall.** Rule model + decision engine (process + host/IP
+  + port) applied through Windows Firewall, with a WinDivert flow-layer
+  interceptor enforcing decisions (`EgressRuleEngine`,
+  `WindowsFirewallRuleApplier`, `WinDivertInterceptor`).
+- **WinUI 3 shell** using the `vaultwares-revisited` "Terminal and Document"
+  theme — a warm parchment frame wrapping the console operational core — with
+  bilingual copy (English / Français QC) and the brand logo.
+- **Ingress telemetry + optional MITM.** Passive inbound capture, privacy watch
+  profile, full-trace manager, and browser-profile MITM via mitmproxy.
 - **DNS/SNI hostname correlation (non-MITM path).** Passive resolver under
   `src/VaultGuardian.Core/Ingress/Hostname/` parses DNS answers and TLS SNI to
   build a bounded, TTL-expiring address→hostname map. Two live feeds populate it:
@@ -139,11 +136,9 @@ The first code baseline is now in place:
   a telemetry host. This fusion of resource cost + network reputation + signature
   trust is the signal a process-only tool can't give.
 
-## Still open (post-MVP hardening)
+## Roadmap
 
-- **WFP-native filtering** to replace WinDivert for environments that cannot
-  ship a third-party driver.
-- **Privileged policy engine as a Windows service** with local IPC, splitting
-  the firewall applier + interceptor out of the admin UI process.
-- **SNI coverage beyond port 443** (e.g. 8443, QUIC/HTTP-3) if non-standard TLS
-  ports become relevant.
+Planned work — near-term priorities (WFP-native enforcement, free threat-intel
+matching), the 24/7 stability gate that must pass before behavioral logging
+begins, and the longer-term behavioral-intelligence direction — lives in
+[ROADMAP.md](ROADMAP.md).

@@ -3,6 +3,7 @@ using System.Net;
 using Microsoft.Extensions.Logging;
 using VaultGuardian.Core.Ingress.Hostname;
 using VaultGuardian.Core.Observability;
+using VaultGuardian.Core.Processes;
 using WindivertDotnet;
 
 namespace VaultGuardian.Core.Interception;
@@ -89,21 +90,9 @@ public sealed class WinDivertInterceptor : IInterceptor
 
         var protocol = parseResult.TcpHeader != null ? TrafficProtocol.Tcp : TrafficProtocol.Udp;
 
-        // Resolve process from PID
+        // Resolve process from PID (non-throwing; dead PIDs are common on this path)
         int pid = address.Flow != null ? address.Flow->ProcessId : 0;
-        var processName = "Unknown";
-        var processPath = "Unknown";
-
-        if (pid > 0)
-        {
-            try
-            {
-                using var proc = Process.GetProcessById((int)pid);
-                processName = proc.ProcessName;
-                processPath = proc.MainModule?.FileName ?? "Unknown";
-            }
-            catch { /* Process exited or access denied */ }
-        }
+        ProcessImageResolver.TryResolve(pid, out var processName, out var processPath);
 
         // Non-MITM hostname policy: annotate the flow with any hostname learned
         // passively from DNS/SNI so rules can match on host without decrypting TLS.
