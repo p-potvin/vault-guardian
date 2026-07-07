@@ -108,6 +108,7 @@ public sealed class WinDivertSniSniffer : IHostnameSniffer
             return;
         }
 
+        _logger.LogInformation("SNI sniffer stopping");
         await _cts.CancelAsync().ConfigureAwait(false);
         if (_runTask != null)
         {

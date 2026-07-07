@@ -28,6 +28,9 @@ public partial class App : Application
     public static TaskbarIcon? TrayIcon { get; private set; }
     public static MainWindow? MainAppWindow { get; private set; }
 
+    private static System.Threading.Timer? _heartbeatTimer;
+    private static DateTimeOffset _startedAt;
+
     public App()
     {
         InitializeComponent();
@@ -60,6 +63,12 @@ public partial class App : Application
 
         var logger = ServiceProvider.GetRequiredService<ILogger<App>>();
 
+        var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+        logger.LogInformation(
+            "VaultGuardian v{Version} starting (pid {Pid}). Settings: ingressCapture={Ingress} hostnameCorrelation={Sni} browserMitm={Mitm} mitmPort={Port} refreshMs={Refresh} lang={Lang}",
+            version, Environment.ProcessId, settings.EnableIngressPacketCapture, settings.EnableHostnameCorrelation,
+            settings.EnableBrowserProfileMitm, settings.MitmProxyPort, settings.RefreshIntervalMs, settings.Language);
+
         // Load Rules
         var engine = ServiceProvider.GetRequiredService<RuleDecisionEngine>();
         var loadedRules = await RuleConfigurationLoader.LoadFromFileAsync("rules.json");
@@ -68,6 +77,8 @@ public partial class App : Application
             engine.UpdateRules(loadedRules);
         }
 
+        logger.LogInformation("Loaded {Count} egress rule(s) from rules.json", loadedRules.Count);
+
         // Clean up any rules left in the Windows Firewall from the previous session,
         // then re-apply the current rule set (persistent rules will be reinstated).
         var firewall = ServiceProvider.GetRequiredService<IFirewallRuleApplier>();
@@ -75,6 +86,7 @@ public partial class App : Application
         {
             await firewall.CleanupPreviousSessionAsync();
             await firewall.ApplyAsync(engine.Rules);
+            logger.LogInformation("Firewall rules applied at startup");
         }
         catch (Exception ex)
         {
@@ -86,6 +98,7 @@ public partial class App : Application
         try
         {
             await interceptor.StartAsync(CancellationToken.None);
+            logger.LogInformation("Egress interceptor started");
         }
         catch (Exception ex)
         {
@@ -99,11 +112,16 @@ public partial class App : Application
             try
             {
                 await sniffer.StartAsync(CancellationToken.None);
+                logger.LogInformation("SNI sniffer started (outbound TCP/443)");
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to start hostname (SNI) sniffer");
             }
+        }
+        else
+        {
+            logger.LogInformation("Hostname correlation disabled; SNI sniffer not started");
         }
 
         TrayIcon = CreateTrayIcon();
@@ -111,6 +129,7 @@ public partial class App : Application
         MainAppWindow = ServiceProvider.GetRequiredService<MainWindow>();
         MainAppWindow.Closed += OnMainWindowClosed;
         MainAppWindow.Activate();
+        logger.LogInformation("Main window activated");
 
         if (settings.EnableIngressPacketCapture)
         {
@@ -119,6 +138,56 @@ public partial class App : Application
         else
         {
             logger.LogInformation("Ingress packet capture is disabled; enable it in settings to start passive capture on the next launch.");
+        }
+
+        StartHeartbeat(logger);
+        logger.LogInformation("Startup complete");
+    }
+
+    private static void StartHeartbeat(ILogger logger)
+    {
+        _startedAt = DateTimeOffset.UtcNow;
+        _heartbeatTimer = new System.Threading.Timer(
+            _ => LogHeartbeat(logger),
+            null,
+            TimeSpan.FromSeconds(60),
+            TimeSpan.FromSeconds(60));
+    }
+
+    private static void LogHeartbeat(ILogger logger)
+    {
+        try
+        {
+            using var self = System.Diagnostics.Process.GetCurrentProcess();
+            self.Refresh();
+            var uptime = DateTimeOffset.UtcNow - _startedAt;
+
+            var stats = ServiceProvider?.GetService<TrafficStats>()?.GetSnapshot();
+            var ingress = ServiceProvider?.GetService<IIngressTrafficWatcher>()?.GetStatus();
+            var hostnames = ServiceProvider?.GetService<HostnameResolutionStore>()?.Count ?? 0;
+
+            logger.LogInformation(
+                "Heartbeat uptime={Uptime:d\\.hh\\:mm\\:ss} mem(ws={Ws}MB priv={Priv}MB) threads={Threads} handles={Handles} | " +
+                "traffic(total={Total} allowed={Allowed} blocked={Blocked} sent={Sent}MB recv={Recv}MB) | " +
+                "ingress({IngressState} archived={Archived} skipped={Skipped}) | hostnames={Hostnames}",
+                uptime,
+                self.WorkingSet64 / 1024 / 1024,
+                self.PrivateMemorySize64 / 1024 / 1024,
+                self.Threads.Count,
+                self.HandleCount,
+                stats?.TotalPackets ?? 0,
+                stats?.AllowedPackets ?? 0,
+                stats?.BlockedPackets ?? 0,
+                (stats?.TotalBytesSent ?? 0) / 1024 / 1024,
+                (stats?.TotalBytesRecv ?? 0) / 1024 / 1024,
+                ingress?.State.ToString() ?? "n/a",
+                ingress?.ArchivedPackets ?? 0,
+                ingress?.SkippedPackets ?? 0,
+                hostnames);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Heartbeat logging failed");
         }
     }
 
@@ -134,6 +203,7 @@ public partial class App : Application
         {
             await Task.Yield();
             await ingressWatcher.StartAsync(CancellationToken.None);
+            logger.LogInformation("Ingress traffic watcher started");
         }
         catch (Exception ex)
         {
@@ -152,11 +222,22 @@ public partial class App : Application
         // down the process (and with it the tray icon). The MainWindow Closed
         // handler is what actually performs firewall cleanup on a real exit.
         System.Diagnostics.Debug.WriteLine($"[VaultGuardian] Unhandled: {e.Message}");
+        try
+        {
+            ServiceProvider?.GetService<ILogger<App>>()?.LogError(e.Exception, "Unhandled UI exception (handled, process kept alive)");
+        }
+        catch { }
         e.Handled = true;
     }
 
     private static async Task ShutdownAsync()
     {
+        var logger = ServiceProvider?.GetService<ILogger<App>>();
+        logger?.LogInformation("Shutdown starting");
+
+        _heartbeatTimer?.Dispose();
+        _heartbeatTimer = null;
+
         if (ServiceProvider != null)
         {
             // Clear session-only firewall rules before tearing down the container.
@@ -190,6 +271,8 @@ public partial class App : Application
 
             // ServiceProvider disposal cascades to singletons (incl. IInterceptor's
             // IAsyncDisposable). Prefer DisposeAsync where available.
+            // Logged before disposal because the file logger lives in the container.
+            logger?.LogInformation("Subsystems stopped; disposing service container (final log line)");
             try
             {
                 if (ServiceProvider is IAsyncDisposable asyncDisposable)
@@ -292,7 +375,14 @@ public partial class App : Application
 
     private static void ConfigureServices(IServiceCollection services, AppSettings settings)
     {
-        services.AddLogging(builder => builder.AddConsole());
+        var logDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs");
+        services.AddLogging(builder =>
+        {
+            builder.SetMinimumLevel(LogLevel.Information);
+            builder.AddConsole();
+            // Persistent daily-rolling file so a multi-day stability run is diagnosable.
+            builder.AddProvider(new Logging.FileLoggerProvider(logDirectory));
+        });
 
         services.AddSingleton(settings);
         services.AddSingleton(new RuleDecisionEngine([]));

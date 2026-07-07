@@ -33,23 +33,26 @@ matching against **free** feeds. This is where a single-PC tool actually gets
 value out of fingerprinting — JA4's real strength (multi-device, high-volume
 correlation) doesn't apply here, but "does this match a known-bad list?" does.
 
-Honest state of free databases (verify licences before shipping):
+Decided sources (verify licences before shipping):
 
-- **abuse.ch SSLBL** — free JA3 fingerprints of malware C2. This is the most
-  established free fingerprint feed, but it is **JA3, not JA4**. Practical
-  implication: compute **JA3 alongside JA4** so we can use SSLBL directly.
-- **ja4db.com (FoxIO)** — community JA4/JA4+ database; skews toward application
-  identification ("this is Chrome / this is a specific bot") more than a curated
-  malicious list. Check per-fingerprint licensing (JA4 core is BSD-3; some JA4+
+- **abuse.ch SSLBL + JA3 — approved.** Free JA3 fingerprints of malware C2, the
+  most established free fingerprint feed. It is **JA3, not JA4**, so this requires
+  computing **JA3 alongside JA4** (see deferred items). Worth adding.
+- **ja4db.com (FoxIO) — wanted, with a twist.** Beyond malicious fingerprints,
+  its value here is identifying **legit/popular apps that phone home** — i.e.
+  known-good software emitting "telemetry"/data-collection traffic. Surfacing
+  "this signed app is beaconing telemetry" is a privacy signal, not just a
+  malware one. Check per-fingerprint licensing (JA4 core is BSD-3; some JA4+
   variants are licensed).
-- **Host/IP blocklists** — the highest-value, most abundant free option for a
-  home PC: abuse.ch URLhaus / Feodo Tracker, StevenBlack hosts, the firebog
-  lists, etc. Flagging a process that talks to a known-bad **host** is more
-  actionable here than a fingerprint match, and feeds are plentiful and free.
+- **Host/IP blocklists — approved; effectively a local ad/malware blocker.**
+  abuse.ch URLhaus / Feodo Tracker, StevenBlack hosts, the firebog lists, etc.
+  Matching a process against known-bad/ad/telemetry **hosts** is the highest-value
+  free signal for a home PC, and doing it in-app **removes the need to run an
+  upstream AdGuard/Pi-hole** — VaultGuardian becomes the enforcement point.
 
-Deliverable: a local, refreshable match engine (JA3/JA4 + host lists) that raises
-a triage/flow flag with the matched source. No cloud calls beyond periodic feed
-download.
+Deliverable: a local, refreshable match engine (JA3/JA4 fingerprints + host
+lists) that both flags triage/flow rows with the matched source and can block at
+the firewall layer. No cloud calls beyond periodic feed download.
 
 ---
 
@@ -71,6 +74,13 @@ Acceptance criteria (measure, don't assume):
 - The recent hot-path fix (non-throwing PID resolution via
   `ProcessImageResolver`) is representative of the bar: no exceptions on hot
   paths, no per-packet allocations that matter.
+
+Instrumentation for this gate is in place: a persistent daily-rolling file log
+(`<app>/logs/vaultguardian-*.log`) captures the full lifecycle (startup stages,
+subsystem start/stop, shutdown) plus a **60-second heartbeat** recording our own
+process working set / private bytes / thread & handle counts alongside traffic,
+ingress, and hostname-map counters — the series to watch for leaks and drift over
+a multi-day soak.
 
 Only once this gate passes do we enable the behavioral logging in Phase 3.
 

@@ -24,6 +24,9 @@ public sealed class HostnameResolutionStore : IHostnameResolver
         _capacity = Math.Max(64, capacity);
     }
 
+    /// <summary>Approximate number of cached mappings (may include not-yet-pruned expired entries).</summary>
+    public int Count => _map.Count;
+
     /// <summary>Feeds a DNS response payload (UDP source port 53) into the map.</summary>
     public int IngestDnsResponse(ReadOnlySpan<byte> dnsPayload)
     {

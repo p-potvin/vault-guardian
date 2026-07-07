@@ -109,9 +109,11 @@ public sealed class WinDivertInterceptor : IInterceptor
 
     public async Task StopAsync()
     {
+        _logger.LogInformation("Egress interceptor stopping");
         if (_cts != null) await _cts.CancelAsync();
         if (_runTask != null) await _runTask;
         _divert?.Dispose();
+        _logger.LogInformation("Egress interceptor stopped");
     }
 
     public async ValueTask DisposeAsync()
