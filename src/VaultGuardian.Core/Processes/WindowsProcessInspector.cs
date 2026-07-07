@@ -23,6 +23,7 @@ public sealed class WindowsProcessInspector : IProcessInspector
     private const int ProcessQueryLimitedInformation = 0x1000;
     private const int ProcessBreakOnTermination = 29;
     private const int AfInet = 2;
+    private const int AfInet6 = 23;
     private const int TcpTableOwnerPidAll = 5;
     private const int MaxEndpointsPerProcess = 6;
 
@@ -252,44 +253,64 @@ public sealed class WindowsProcessInspector : IProcessInspector
         return endpoints;
     }
 
-    // Maps owning PID -> distinct remote IPv4 addresses from the active TCP table.
+    // Maps owning PID -> distinct remote addresses from the active TCP tables (IPv4 + IPv6).
     private static Dictionary<int, HashSet<string>> QueryTcpRemoteAddressesByPid()
     {
         var map = new Dictionary<int, HashSet<string>>();
+
+        // MIB_TCPROW_OWNER_PID: state, localAddr, localPort, remoteAddr, remotePort, pid (24 bytes).
+        ReadTcpTable(AfInet, rowSize: 24, remoteAddrOffset: 12, remoteAddrLength: 4, pidOffset: 20, map);
+
+        // MIB_TCP6ROW_OWNER_PID: localAddr[16], localScope, localPort, remoteAddr[16],
+        // remoteScope, remotePort, state, pid (56 bytes).
+        ReadTcpTable(AfInet6, rowSize: 56, remoteAddrOffset: 24, remoteAddrLength: 16, pidOffset: 52, map);
+
+        return map;
+    }
+
+    private static void ReadTcpTable(
+        int ipVersion,
+        int rowSize,
+        int remoteAddrOffset,
+        int remoteAddrLength,
+        int pidOffset,
+        Dictionary<int, HashSet<string>> map)
+    {
         int bufferSize = 0;
-        GetExtendedTcpTable(IntPtr.Zero, ref bufferSize, false, AfInet, TcpTableOwnerPidAll, 0);
+        GetExtendedTcpTable(IntPtr.Zero, ref bufferSize, false, ipVersion, TcpTableOwnerPidAll, 0);
         if (bufferSize <= 0)
         {
-            return map;
+            return;
         }
 
         var buffer = Marshal.AllocHGlobal(bufferSize);
         try
         {
-            if (GetExtendedTcpTable(buffer, ref bufferSize, false, AfInet, TcpTableOwnerPidAll, 0) != 0)
+            if (GetExtendedTcpTable(buffer, ref bufferSize, false, ipVersion, TcpTableOwnerPidAll, 0) != 0)
             {
-                return map;
+                return;
             }
 
             int entryCount = Marshal.ReadInt32(buffer);
-            int rowOffset = 4; // past dwNumEntries
-            const int rowSize = 24; // MIB_TCPROW_OWNER_PID: 6 x DWORD
+            const int rowsStart = 4; // past dwNumEntries
+            var addressBytes = new byte[remoteAddrLength];
             for (int i = 0; i < entryCount; i++)
             {
-                int baseOffset = rowOffset + (i * rowSize);
-                int remoteAddr = Marshal.ReadInt32(buffer, baseOffset + 12);
-                int pid = Marshal.ReadInt32(buffer, baseOffset + 20);
-                if (pid <= 0 || remoteAddr == 0)
-                {
-                    continue; // unowned or listening (0.0.0.0) socket
-                }
-
-                var address = new IPAddress(BitConverter.GetBytes(remoteAddr)).ToString();
-                if (address == "0.0.0.0")
+                int baseOffset = rowsStart + (i * rowSize);
+                int pid = Marshal.ReadInt32(buffer, baseOffset + pidOffset);
+                if (pid <= 0)
                 {
                     continue;
                 }
 
+                Marshal.Copy(IntPtr.Add(buffer, baseOffset + remoteAddrOffset), addressBytes, 0, remoteAddrLength);
+                var ip = new IPAddress(addressBytes);
+                if (IsUnspecified(ip))
+                {
+                    continue; // listening / unconnected socket
+                }
+
+                var address = ip.ToString();
                 if (!map.TryGetValue(pid, out var set))
                 {
                     set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -307,9 +328,10 @@ public sealed class WindowsProcessInspector : IProcessInspector
         {
             Marshal.FreeHGlobal(buffer);
         }
-
-        return map;
     }
+
+    private static bool IsUnspecified(IPAddress ip) =>
+        ip.Equals(IPAddress.Any) || ip.Equals(IPAddress.IPv6Any);
 
     private static (SignatureStatus, string?) ResolveSignature(string? imagePath)
     {
