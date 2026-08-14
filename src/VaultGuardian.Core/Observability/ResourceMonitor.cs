@@ -16,6 +16,7 @@ public sealed partial class ResourceMonitor : IDisposable
     private bool _disposed;
     private bool _nvmlInitialized;
     private IntPtr _gpuHandle;
+    private readonly List<(IntPtr Handle, string Name, int Index)> _gpuDevices = [];
 
     public ResourceMonitor(Lazy<CudaProfiler> cudaProfiler)
     {
@@ -51,11 +52,22 @@ public sealed partial class ResourceMonitor : IDisposable
             if (nvmlInit() == 0)
             {
                 _nvmlInitialized = true;
-                // Get handle for the first GPU (index 0)
-                if (nvmlDeviceGetHandleByIndex(0, out _gpuHandle) != 0)
+
+                // Enumerate every installed device rather than assuming index 0 —
+                // multi-GPU machines would otherwise report only the first card.
+                if (nvmlDeviceGetCount_v2(out var count) != 0) count = 0;
+
+                for (uint i = 0; i < count; i++)
                 {
-                    _gpuHandle = IntPtr.Zero;
+                    if (nvmlDeviceGetHandleByIndex(i, out var handle) != 0 || handle == IntPtr.Zero)
+                    {
+                        continue;
+                    }
+
+                    _gpuDevices.Add((handle, ReadDeviceName(handle, (int)i), (int)i));
                 }
+
+                _gpuHandle = _gpuDevices.Count > 0 ? _gpuDevices[0].Handle : IntPtr.Zero;
             }
         }
         catch { /* NVML not found or failed to init */ }
@@ -86,6 +98,28 @@ public sealed partial class ResourceMonitor : IDisposable
     private static extern int nvmlDeviceGetHandleByIndex(uint index, out IntPtr device);
 
     [DllImport("nvml.dll", CallingConvention = CallingConvention.Cdecl)]
+    private static extern int nvmlDeviceGetCount_v2(out uint deviceCount);
+
+    [DllImport("nvml.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+    private static extern int nvmlDeviceGetName(IntPtr device, System.Text.StringBuilder name, uint length);
+
+    private static string ReadDeviceName(IntPtr handle, int index)
+    {
+        try
+        {
+            var buffer = new System.Text.StringBuilder(96);
+            if (nvmlDeviceGetName(handle, buffer, (uint)buffer.Capacity) == 0)
+            {
+                var name = buffer.ToString();
+                if (!string.IsNullOrWhiteSpace(name)) return name;
+            }
+        }
+        catch { /* name is cosmetic; fall through to a positional label */ }
+
+        return $"GPU {index}";
+    }
+
+    [DllImport("nvml.dll", CallingConvention = CallingConvention.Cdecl)]
     private static extern int nvmlDeviceGetUtilizationRates(IntPtr device, out nvmlUtilization_t utilization);
 
     [DllImport("nvml.dll", CallingConvention = CallingConvention.Cdecl)]
@@ -110,6 +144,7 @@ public sealed partial class ResourceMonitor : IDisposable
         var availableBytes = availableUnits * 1024 * 1024;
         var usedBytes = totalRamBytes - availableBytes;
 
+        var gpus = GetAllGpuMetrics();
         var gpuStats = GetExtendedGpuStats();
 
         return new SystemResourceMetrics(
@@ -127,8 +162,36 @@ public sealed partial class ResourceMonitor : IDisposable
             DiskReadBytesPerSec: _diskReadCounter.NextValue(),
             DiskWriteBytesPerSec: _diskWriteCounter.NextValue(),
             DiskActiveTimePercentage: _diskTimeCounter.NextValue(),
-            DiskQueueLength: (uint)_diskQueueCounter.NextValue()
+            DiskQueueLength: (uint)_diskQueueCounter.NextValue(),
+            Gpus: gpus
         );
+    }
+
+    /// <summary>Reads every enumerated NVML device. Empty when NVML is unavailable.</summary>
+    private IReadOnlyList<GpuMetrics> GetAllGpuMetrics()
+    {
+        if (!_nvmlInitialized || _gpuDevices.Count == 0) return [];
+
+        var results = new List<GpuMetrics>(_gpuDevices.Count);
+        foreach (var (handle, name, index) in _gpuDevices)
+        {
+            double usage = 0, temp = 0, memUsed = 0, memTotal = 0, power = 0;
+            uint fan = 0;
+
+            if (nvmlDeviceGetUtilizationRates(handle, out var utilization) == 0) usage = utilization.gpu;
+            if (nvmlDeviceGetTemperature(handle, 0, out var t) == 0) temp = t;
+            if (nvmlDeviceGetFanSpeed(handle, out var f) == 0) fan = f;
+            if (nvmlDeviceGetMemoryInfo(handle, out var mem) == 0)
+            {
+                memUsed = mem.used;
+                memTotal = mem.total;
+            }
+            if (nvmlDeviceGetPowerUsage(handle, out var p) == 0) power = p / 1000.0; // mW to W
+
+            results.Add(new GpuMetrics(index, name, usage, temp, fan, memUsed, memTotal, power));
+        }
+
+        return results;
     }
 
     private (double Usage, double Temp, uint Fan, double MemUsed, double MemTotal, double Power) GetExtendedGpuStats()

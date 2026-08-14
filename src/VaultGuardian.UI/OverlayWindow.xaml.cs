@@ -1,8 +1,12 @@
 using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using VaultGuardian.Core.Observability;
 using Windows.Graphics;
@@ -11,9 +15,21 @@ namespace VaultGuardian.UI;
 
 public sealed partial class OverlayWindow : Window
 {
+    private const int OverlayWidth = 224;
+
+    // Header + CPU + RAM + CUDA + padding, with each GPU row added on top.
+    private const int BaseHeight = 148;
+    private const int PerGpuHeight = 27;
+
     private readonly AppWindow _appWindow;
     private readonly OverlappedPresenter _presenter;
     private readonly Storyboard _ledPulse;
+    private readonly List<GpuRow> _gpuRows = [];
+
+    private bool _isDragging;
+    private POINT _dragStartCursor;
+    private PointInt32 _dragStartWindowPosition;
+    private int _renderedGpuCount = -1;
 
     public OverlayWindow()
     {
@@ -34,8 +50,7 @@ public sealed partial class OverlayWindow : Window
         _appWindow.SetPresenter(_presenter);
         _appWindow.IsShownInSwitchers = false;
 
-        _appWindow.Resize(new SizeInt32(200, 150));
-
+        ResizeForGpuCount(0);
         SystemBackdrop = new Microsoft.UI.Xaml.Media.DesktopAcrylicBackdrop();
 
         PositionInCorner();
@@ -66,22 +81,58 @@ public sealed partial class OverlayWindow : Window
         return sb;
     }
 
+    // ── Dragging ──────────────────────────────────────────────────────────
+    //
+    // Previously this handed off to Windows' modal move loop via
+    // WM_NCLBUTTONDOWN/HTCAPTION. Because WinUI had already handled the press,
+    // that loop started without a held button and behaved like click-to-pick-up,
+    // move, click-to-drop. Tracking the pointer ourselves restores the normal
+    // press, drag, release gesture.
+    //
+    // Screen cursor position is used rather than the event's position: the latter
+    // is relative to the window we are moving, which would feed back into itself.
+
     private void OverlayRoot_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
-        var props = e.GetCurrentPoint((Microsoft.UI.Xaml.UIElement)sender).Properties;
-        if (props.IsLeftButtonPressed)
-        {
-            _presenter.SetBorderAndTitleBar(false, false);
+        var element = (UIElement)sender;
+        var properties = e.GetCurrentPoint(element).Properties;
+        if (!properties.IsLeftButtonPressed) return;
 
-            // BeginMoveResize requires HTCAPTION (=2); WindowsAppSDK exposes this via OverlappedPresenter
-            // through a Win32 SendMessage WM_NCLBUTTONDOWN. We call into Win32 directly.
-            const int WM_NCLBUTTONDOWN = 0x00A1;
-            const int HTCAPTION = 2;
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-            ReleaseCapture();
-            SendMessage(hwnd, WM_NCLBUTTONDOWN, HTCAPTION, 0);
-            SnapToGrid();
-        }
+        if (!GetCursorPos(out _dragStartCursor)) return;
+
+        _dragStartWindowPosition = _appWindow.Position;
+        _isDragging = element.CapturePointer(e.Pointer);
+        e.Handled = _isDragging;
+    }
+
+    private void OverlayRoot_PointerMoved(object sender, PointerRoutedEventArgs e)
+    {
+        if (!_isDragging) return;
+        if (!GetCursorPos(out var current)) return;
+
+        _appWindow.Move(new PointInt32(
+            _dragStartWindowPosition.X + (current.X - _dragStartCursor.X),
+            _dragStartWindowPosition.Y + (current.Y - _dragStartCursor.Y)));
+
+        e.Handled = true;
+    }
+
+    private void OverlayRoot_PointerReleased(object sender, PointerRoutedEventArgs e)
+    {
+        if (!_isDragging) return;
+
+        ((UIElement)sender).ReleasePointerCapture(e.Pointer);
+        EndDrag();
+        e.Handled = true;
+    }
+
+    private void OverlayRoot_PointerCaptureLost(object sender, PointerRoutedEventArgs e) => EndDrag();
+
+    private void EndDrag()
+    {
+        if (!_isDragging) return;
+        _isDragging = false;
+        SnapToGrid();
     }
 
     private void SnapToGrid()
@@ -119,10 +170,9 @@ public sealed partial class OverlayWindow : Window
             workArea.Y + 10));
     }
 
-    public void HideOverlay()
-    {
-        _appWindow.Hide();
-    }
+    public void HideOverlay() => _appWindow.Hide();
+
+    // ── Metrics ───────────────────────────────────────────────────────────
 
     public void UpdateMetrics(AggregateMetrics metrics)
     {
@@ -134,8 +184,7 @@ public sealed partial class OverlayWindow : Window
         RamText.Text = $"{(metrics.Resources.RamUsageBytes / 1024 / 1024 / 1024):F1} GB";
         RamBar.Value = ramPercent;
 
-        GpuText.Text = $"{metrics.Resources.GpuUsagePercentage:F1}%";
-        GpuBar.Value = metrics.Resources.GpuUsagePercentage;
+        UpdateGpuRows(metrics.Resources);
 
         CudaText.Text = $"{metrics.Resources.CudaCoreUtilization:F1}%";
         CudaBar.Value = metrics.Resources.CudaCoreUtilization;
@@ -143,9 +192,127 @@ public sealed partial class OverlayWindow : Window
         BlockedText.Text = metrics.Traffic.BlockedPackets.ToString();
     }
 
-    [System.Runtime.InteropServices.DllImport("user32.dll")]
-    private static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
+    private void UpdateGpuRows(SystemResourceMetrics resources)
+    {
+        var gpus = resources.GpuList;
 
-    [System.Runtime.InteropServices.DllImport("user32.dll")]
-    private static extern bool ReleaseCapture();
+        // Fall back to the flat single-GPU fields when NVML reported no devices,
+        // so the overlay still shows a GPU line on non-NVIDIA machines.
+        if (gpus.Count == 0)
+        {
+            EnsureGpuRows(1);
+            _gpuRows[0].Update("GPU", resources.GpuUsagePercentage);
+            return;
+        }
+
+        EnsureGpuRows(gpus.Count);
+        for (var i = 0; i < gpus.Count; i++)
+        {
+            _gpuRows[i].Update(ShortGpuLabel(gpus[i], gpus.Count), gpus[i].UsagePercentage);
+        }
+    }
+
+    /// <summary>Trims vendor prefixes so the label fits the narrow overlay.</summary>
+    private static string ShortGpuLabel(GpuMetrics gpu, int totalGpus)
+    {
+        var name = gpu.Name
+            .Replace("NVIDIA ", string.Empty, StringComparison.OrdinalIgnoreCase)
+            .Replace("GeForce ", string.Empty, StringComparison.OrdinalIgnoreCase)
+            .Trim();
+
+        if (string.IsNullOrWhiteSpace(name)) name = $"GPU {gpu.Index}";
+        return totalGpus > 1 ? $"{gpu.Index}: {name}" : name;
+    }
+
+    private void EnsureGpuRows(int count)
+    {
+        if (_renderedGpuCount == count) return;
+
+        GpuStack.Children.Clear();
+        _gpuRows.Clear();
+
+        for (var i = 0; i < count; i++)
+        {
+            var row = GpuRow.Create(this);
+            _gpuRows.Add(row);
+            GpuStack.Children.Add(row.Container);
+        }
+
+        _renderedGpuCount = count;
+        ResizeForGpuCount(count);
+    }
+
+    /// <summary>Grows the window instead of scrolling, so no GPU is hidden.</summary>
+    private void ResizeForGpuCount(int gpuCount)
+    {
+        var height = BaseHeight + (Math.Max(gpuCount, 1) * PerGpuHeight);
+        _appWindow.Resize(new SizeInt32(OverlayWidth, height));
+    }
+
+    /// <summary>One label + percentage + bar, mirroring the CPU/RAM rows in XAML.</summary>
+    private sealed class GpuRow
+    {
+        public required StackPanel Container { get; init; }
+        public required TextBlock Label { get; init; }
+        public required TextBlock Value { get; init; }
+        public required ProgressBar Bar { get; init; }
+
+        public void Update(string label, double percentage)
+        {
+            Label.Text = label;
+            Value.Text = $"{percentage:F1}%";
+            Bar.Value = percentage;
+        }
+
+        public static GpuRow Create(OverlayWindow owner)
+        {
+            var label = new TextBlock
+            {
+                FontSize = 11,
+                Foreground = owner.Resource<Brush>("SecondaryTextBrush"),
+                TextTrimming = TextTrimming.CharacterEllipsis,
+            };
+
+            var value = new TextBlock
+            {
+                FontSize = 11,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                FontFamily = owner.Resource<FontFamily>("VaultMonoFontFamily"),
+                Foreground = owner.Resource<Brush>("PrimaryTextBrush"),
+            };
+
+            var header = new Grid { Margin = new Thickness(0, 0, 0, 4) };
+            header.Children.Add(label);
+            header.Children.Add(value);
+
+            var bar = new ProgressBar
+            {
+                Height = 2,
+                Margin = new Thickness(0, 0, 0, 8),
+                Foreground = owner.Resource<Brush>("IrisBrush"),
+            };
+
+            var container = new StackPanel();
+            container.Children.Add(header);
+            container.Children.Add(bar);
+
+            return new GpuRow { Container = container, Label = label, Value = value, Bar = bar };
+        }
+    }
+
+    private T Resource<T>(string key) => (T)Application.Current.Resources[key];
+
+    // ── Win32 ─────────────────────────────────────────────────────────────
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct POINT
+    {
+        public int X;
+        public int Y;
+    }
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetCursorPos(out POINT lpPoint);
 }

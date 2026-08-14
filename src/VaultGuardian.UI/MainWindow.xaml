@@ -44,6 +44,7 @@
                     Padding="16,8,16,16">
             <Pivot x:Name="MainPivot" SelectionChanged="OnPivotChanged" Background="Transparent">
                 <PivotItem Header="Dashboard">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Padding="0,0,10,0">
                     <Grid Margin="0,12,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="1.5*"/>
@@ -105,8 +106,8 @@
                                                   Foreground="{StaticResource PrimaryTextBrush}"/>
                                         <Button Content="Manage Rules" Click="OnManageRulesClick"
                                                 Padding="22,10"
-                                                Background="{StaticResource ConsoleGoldBrush}"
-                                                Foreground="#1A1230"
+                                                Background="{StaticResource IrisBrush}"
+                                                Foreground="#0A0C11"
                                                 FontWeight="SemiBold"
                                                 BorderThickness="0"
                                                 CornerRadius="12"/>
@@ -159,7 +160,7 @@
                         <Grid x:Name="DetailsPopup" Grid.ColumnSpan="2" Background="#E60b0813"
                               Visibility="Collapsed" Canvas.ZIndex="10" Margin="-10">
                             <Border Background="{StaticResource ConsoleElevatedBrush}"
-                                    BorderBrush="{StaticResource ConsoleGoldBrush}"
+                                    BorderBrush="{StaticResource IrisBrush}"
                                     BorderThickness="1"
                                     CornerRadius="{StaticResource CardCornerRadius}"
                                     Margin="40" Padding="30">
@@ -175,7 +176,7 @@
 
                                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                                         <StackPanel>
-                                            <TextBlock Text="Disk &amp; Partition Layout" Foreground="{StaticResource ConsoleGoldBrush}"
+                                            <TextBlock Text="Disk &amp; Partition Layout" Foreground="{StaticResource IrisBrush}"
                                                        FontWeight="Bold" Margin="0,0,0,10"/>
                                             <TextBlock x:Name="DiskDetailedDetails" Text="Querying counters..."
                                                        FontFamily="{StaticResource VaultMonoFontFamily}"
@@ -191,16 +192,18 @@
 
                                     <Button Grid.Row="2" Content="Close Details" Click="OnToggleDetailsClick"
                                             HorizontalAlignment="Right" Padding="18,10"
-                                            Background="{StaticResource ConsoleGoldBrush}"
-                                            Foreground="#1A1230" FontWeight="SemiBold"
+                                            Background="{StaticResource IrisBrush}"
+                                            Foreground="#0A0C11" FontWeight="SemiBold"
                                             BorderThickness="0" CornerRadius="12"/>
                                 </Grid>
                             </Border>
                         </Grid>
                     </Grid>
+                    </ScrollViewer>
                 </PivotItem>
 
                 <PivotItem Header="Performance">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Padding="0,0,10,0">
                     <Grid Margin="0,12,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -239,54 +242,19 @@
                         </StackPanel>
 
                         <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                            <!-- One GpuPanel per detected device, populated in code-behind. -->
+                            <StackPanel x:Name="GpuDetailedStack"/>
+
                             <Border Background="{StaticResource ConsoleRaisedBrush}"
                                     BorderBrush="{StaticResource ConsoleBorderBrush}" BorderThickness="1"
-                                    CornerRadius="{StaticResource CardCornerRadius}" Padding="24">
+                                    CornerRadius="{StaticResource CardCornerRadius}" Padding="24" Margin="0,0,0,15">
                                 <StackPanel>
-                                    <TextBlock Text="GPU DETAILED (NVML)" Foreground="{StaticResource SecondaryTextBrush}"
-                                               FontSize="12" FontWeight="Bold" Margin="0,0,0,15"/>
-
-                                    <local:MetricControl x:Name="GpuVramMetric" Label="VRAM Utilization" Margin="0,0,0,15"/>
-
-                                    <Grid Margin="0,10,0,0">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel Grid.Column="0">
-                                            <TextBlock Text="TEMP" Foreground="{StaticResource SecondaryTextBrush}" FontSize="10"/>
-                                            <TextBlock x:Name="GpuTempText" Text="0°C"
-                                                       FontFamily="{StaticResource VaultMonoFontFamily}"
-                                                       Foreground="{StaticResource PrimaryTextBrush}" FontSize="18" FontWeight="SemiBold"/>
-                                        </StackPanel>
-                                        <StackPanel Grid.Column="1">
-                                            <TextBlock Text="FAN" Foreground="{StaticResource SecondaryTextBrush}" FontSize="10"/>
-                                            <TextBlock x:Name="GpuFanText" Text="0%"
-                                                       FontFamily="{StaticResource VaultMonoFontFamily}"
-                                                       Foreground="{StaticResource PrimaryTextBrush}" FontSize="18" FontWeight="SemiBold"/>
-                                        </StackPanel>
-                                    </Grid>
-
-                                    <Border Background="{StaticResource ConsoleBorderBrush}" Height="1" Margin="0,15"/>
-
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel Grid.Column="0">
-                                            <TextBlock Text="POWER DRAW" Foreground="{StaticResource SecondaryTextBrush}" FontSize="10"/>
-                                            <TextBlock x:Name="GpuPowerText" Text="0.0 W"
-                                                       FontFamily="{StaticResource VaultMonoFontFamily}"
-                                                       Foreground="{StaticResource PrimaryTextBrush}" FontSize="16"/>
-                                        </StackPanel>
-                                        <StackPanel Grid.Column="1" HorizontalAlignment="Right">
-                                            <TextBlock Text="CUDA ENGINE" Foreground="{StaticResource SecondaryTextBrush}" FontSize="10"/>
-                                            <TextBlock x:Name="CudaDetailedText" Text="0% Utilized"
-                                                       FontFamily="{StaticResource VaultMonoFontFamily}"
-                                                       Foreground="{StaticResource PrimaryTextBrush}" FontSize="16"/>
-                                        </StackPanel>
-                                    </Grid>
+                                    <TextBlock Text="CUDA ENGINE" Foreground="{StaticResource SecondaryTextBrush}"
+                                               FontFamily="{StaticResource VaultMonoFontFamily}"
+                                               FontSize="12" FontWeight="Bold" Margin="0,0,0,10"/>
+                                    <TextBlock x:Name="CudaDetailedText" Text="0% Utilized"
+                                               FontFamily="{StaticResource VaultMonoFontFamily}"
+                                               Foreground="{StaticResource PrimaryTextBrush}" FontSize="16"/>
                                 </StackPanel>
                             </Border>
 
@@ -303,9 +271,11 @@
                             </Border>
                         </StackPanel>
                     </Grid>
+                    </ScrollViewer>
                 </PivotItem>
 
                 <PivotItem Header="Ingress">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Padding="0,0,10,0">
                     <Grid Margin="0,12,0,0">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -382,7 +352,7 @@
 
                                     <TextBlock Text="Inbound Sources" FontSize="18" FontWeight="SemiBold"
                                                Foreground="{StaticResource PrimaryTextBrush}" Margin="0,0,0,12"/>
-                                    <ListView x:Name="IngressSourceList" Grid.Row="1"
+                                    <ListView x:Name="IngressSourceList" Grid.Row="1" MinHeight="200" MaxHeight="420"
                                               SelectionChanged="OnIngressSourceSelectionChanged"
                                               Background="{StaticResource ConsoleSurfaceBrush}"
                                               Foreground="{StaticResource PrimaryTextBrush}"
@@ -397,8 +367,8 @@
                                                 Foreground="{StaticResource SecondaryTextBrush}"/>
                                         <Button Content="Clear Archive" Click="OnClearIngressArchiveClick"
                                                 Padding="14,8"
-                                                Background="{StaticResource ConsoleGoldBrush}"
-                                                Foreground="#1A1230"
+                                                Background="{StaticResource IrisBrush}"
+                                                Foreground="#0A0C11"
                                                 FontWeight="SemiBold"
                                                 BorderThickness="0"/>
                                     </StackPanel>
@@ -484,9 +454,11 @@
                                   BorderThickness="1"
                                   Margin="0,0,20,20"/>
                     </Grid>
+                    </ScrollViewer>
                 </PivotItem>
 
                 <PivotItem Header="Processes">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Padding="0,0,10,0">
                     <Grid Margin="0,12,0,0">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -508,8 +480,8 @@
                             </StackPanel>
                             <Button Grid.Column="1" Content="Refresh" Click="OnRefreshProcessesClick"
                                     Padding="18,8"
-                                    Background="{StaticResource ConsoleGoldBrush}"
-                                    Foreground="#1A1230" FontWeight="SemiBold"
+                                    Background="{StaticResource IrisBrush}"
+                                    Foreground="#0A0C11" FontWeight="SemiBold"
                                     BorderThickness="0" CornerRadius="10" VerticalAlignment="Center"/>
                         </Grid>
 
@@ -519,7 +491,7 @@
                                 BorderThickness="1"
                                 CornerRadius="{StaticResource CardCornerRadius}"
                                 Padding="8">
-                            <ListView x:Name="ProcessList"
+                            <ListView x:Name="ProcessList" MinHeight="240" MaxHeight="460"
                                       SelectionChanged="OnProcessSelectionChanged"
                                       Background="Transparent"
                                       Foreground="{StaticResource PrimaryTextBrush}">
@@ -585,13 +557,14 @@
                             </Grid>
                         </Border>
                     </Grid>
+                    </ScrollViewer>
                 </PivotItem>
             </Pivot>
             </Border>
 
             <Border Grid.Row="2"
                     Background="#26D6A441"
-                    BorderBrush="{StaticResource ConsoleGoldBrush}"
+                    BorderBrush="{StaticResource IrisBrush}"
                     BorderThickness="1"
                     CornerRadius="12" Padding="16" Margin="0,24,0,0">
                 <StackPanel Orientation="Horizontal">

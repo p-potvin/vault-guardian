@@ -31,6 +31,7 @@ public sealed partial class MainWindow : Window
     private IngressFlowSummary? _selectedIngressFlow;
     private IngressWatcherStatus _lastIngressStatus = IngressWatcherStatus.Stopped;
     private string _lastIngressListSignature = string.Empty;
+    private readonly List<GpuPanel> _gpuPanels = [];
 
     public MainWindow(
         LiveMonitorService monitor,
@@ -125,12 +126,7 @@ public sealed partial class MainWindow : Window
         DiskDetailedWrite.Update(Math.Min(100, writeMb / 5), $"{writeMb:F2} MB/s");
         DiskDetailedTime.Update(metrics.Resources.DiskActiveTimePercentage, $"{metrics.Resources.DiskActiveTimePercentage:F1}%");
 
-        double vramPercent = metrics.Resources.GpuMemoryTotalBytes > 0 ? (metrics.Resources.GpuMemoryUsedBytes / metrics.Resources.GpuMemoryTotalBytes) * 100 : 0;
-        GpuVramMetric.Update(vramPercent, $"{(metrics.Resources.GpuMemoryUsedBytes / 1024 / 1024 / 1024):F1} GB");
-
-        GpuTempText.Text = $"{metrics.Resources.GpuTempCelsius:0}°C";
-        GpuFanText.Text = $"{metrics.Resources.GpuFanSpeedPercentage}%";
-        GpuPowerText.Text = $"{metrics.Resources.GpuPowerDrawWatts:F1} W";
+        UpdateGpuPanels(metrics.Resources);
         CudaDetailedText.Text = $"{metrics.Resources.CudaCoreUtilization:F0}% Utilized";
 
         TrafficDetailsText.Text = $"Total Egress Sent: {(metrics.Traffic.TotalBytesSent / 1024 / 1024):F1} MB\n" +
@@ -311,6 +307,33 @@ public sealed partial class MainWindow : Window
             rulesWindow.Activate();
         }
         await Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Rebuilds the per-GPU cards when the device count changes, then refreshes
+    /// each in place so a multi-GPU machine shows every card rather than device 0.
+    /// </summary>
+    private void UpdateGpuPanels(SystemResourceMetrics resources)
+    {
+        var gpus = resources.GpuList;
+
+        if (gpus.Count != _gpuPanels.Count)
+        {
+            _gpuPanels.Clear();
+            GpuDetailedStack.Children.Clear();
+
+            foreach (var _ in gpus)
+            {
+                var panel = new GpuPanel();
+                _gpuPanels.Add(panel);
+                GpuDetailedStack.Children.Add(panel);
+            }
+        }
+
+        for (var i = 0; i < gpus.Count; i++)
+        {
+            _gpuPanels[i].Update(gpus[i]);
+        }
     }
 
     private void UpdateIngressView(IngressTrafficSnapshot snapshot, IngressWatcherStatus watcherStatus)
