@@ -1,8 +1,17 @@
+using VaultGuardian.Core.Firewall;
+
 namespace VaultGuardian.Core;
 
 public sealed class AppSettings
 {
     public int RefreshIntervalMs { get; set; } = 1000;
+
+    /// <summary>
+    /// Which backend enforces egress rules. <see cref="FirewallBackend.Auto"/>
+    /// prefers the native Windows Filtering Platform and degrades to netsh if the
+    /// filter engine cannot be opened.
+    /// </summary>
+    public FirewallBackend FirewallBackend { get; set; } = FirewallBackend.Auto;
     public bool LaunchAtStartup { get; set; } = false;
     public bool ShowOverlayOnStart { get; set; } = true;
     public bool MinimizeToTrayOnClose { get; set; } = true;

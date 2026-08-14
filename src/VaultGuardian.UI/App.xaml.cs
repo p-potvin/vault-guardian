@@ -11,6 +11,7 @@ using Microsoft.UI.Xaml.Media.Imaging;
 using VaultGuardian.Core;
 using VaultGuardian.Core.Diagnostics;
 using VaultGuardian.Core.Firewall;
+using VaultGuardian.Core.Firewall.Wfp;
 using VaultGuardian.Core.Ingress;
 using VaultGuardian.Core.Ingress.Hostname;
 using VaultGuardian.Core.Ingress.Mitm;
@@ -426,7 +427,15 @@ public partial class App : Application
         services.AddSingleton<IHostnameSniffer, WinDivertSniSniffer>();
         services.AddSingleton<IProcessInspector, WindowsProcessInspector>();
         services.AddSingleton<IProcessRunner, ProcessRunner>();
-        services.AddSingleton<IFirewallRuleApplier, WindowsFirewallRuleApplier>();
+        services.AddSingleton<IFirewallRuleApplier>(sp => FirewallApplierFactory.Create(
+            sp.GetRequiredService<AppSettings>().FirewallBackend,
+            engineFactory: () => new WfpEngine(sp.GetRequiredService<ILogger<WfpEngine>>()),
+            wfpApplierFactory: engine => new WfpFirewallRuleApplier(
+                engine, sp.GetRequiredService<ILogger<WfpFirewallRuleApplier>>()),
+            netshApplierFactory: () => new WindowsFirewallRuleApplier(
+                sp.GetRequiredService<IProcessRunner>(),
+                sp.GetRequiredService<ILogger<WindowsFirewallRuleApplier>>()),
+            sp.GetRequiredService<ILogger<App>>()));
 
         services.AddSingleton<MainWindow>();
         services.AddSingleton<OverlayWindow>();
