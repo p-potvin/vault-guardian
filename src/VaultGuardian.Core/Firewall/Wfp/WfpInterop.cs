@@ -21,6 +21,12 @@ internal static class WfpInterop
     // ---- Status codes -----------------------------------------------------
 
     public const uint ERROR_SUCCESS = 0;
+
+    // FwpmGetAppIdFromFileName0 reports a missing executable with plain Win32
+    // codes rather than an FWP_E_* value.
+    public const uint ERROR_FILE_NOT_FOUND = 2;
+    public const uint ERROR_PATH_NOT_FOUND = 3;
+
     public const uint FWP_E_FILTER_NOT_FOUND = 0x80320003;
     public const uint FWP_E_PROVIDER_NOT_FOUND = 0x80320005;
     public const uint FWP_E_SUBLAYER_NOT_FOUND = 0x80320007;
@@ -301,6 +307,23 @@ internal static class WfpInterop
 
     [DllImport(Fwpuclnt, ExactSpelling = true)]
     public static extern void FwpmFreeMemory0(ref nint p);
+}
+
+/// <summary>
+/// Raised when one filter cannot be expressed on this machine right now — most
+/// often because the rule names an executable that is not installed. This is a
+/// per-filter condition, not a batch failure: the applier logs it and carries on
+/// with the remaining rules.
+/// </summary>
+public sealed class WfpFilterNotApplicableException : Exception
+{
+    public string RuleName { get; }
+
+    public WfpFilterNotApplicableException(string ruleName, string message)
+        : base(message)
+    {
+        RuleName = ruleName;
+    }
 }
 
 /// <summary>Thrown when a WFP management call returns a non-success code.</summary>

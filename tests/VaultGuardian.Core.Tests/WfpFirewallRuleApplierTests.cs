@@ -19,6 +19,7 @@ public class WfpFirewallRuleApplierTests
 
         public Exception? OpenException { get; set; }
         public Func<WfpFilterPlan, bool>? FailAddWhen { get; set; }
+        public Func<WfpFilterPlan, bool>? NotApplicableWhen { get; set; }
 
         public void Open()
         {
@@ -29,6 +30,9 @@ public class WfpFirewallRuleApplierTests
 
         public ulong AddFilter(WfpFilterPlan plan)
         {
+            if (NotApplicableWhen?.Invoke(plan) == true)
+                throw new WfpFilterNotApplicableException(plan.RuleName, "executable not found");
+
             if (FailAddWhen?.Invoke(plan) == true)
                 throw new WfpException("FwpmFilterAdd0", 5);
 
@@ -151,6 +155,53 @@ public class WfpFirewallRuleApplierTests
 
         Assert.Single(engine.Added);
         Assert.Equal("good", engine.Added[0].RuleName);
+    }
+
+    [Fact]
+    public async Task ApplyAsync_WhenOneRuleNamesAMissingExecutable_StillEnforcesTheRest()
+    {
+        var applier = Create(out var engine);
+        engine.NotApplicableWhen = plan => plan.RuleName == "uninstalled-app";
+
+        await applier.ApplyAsync([
+            new EgressRule("uninstalled-app", ProcessPath: @"C:\gone\missing.exe"),
+            new EgressRule("still-works", RemoteAddress: "203.0.113.1"),
+        ]);
+
+        // A rule pointing at a program that is not installed cannot be expressed,
+        // but it must not stop every other rule from being enforced.
+        var installed = Assert.Single(engine.Added);
+        Assert.Equal("still-works", installed.RuleName);
+        Assert.Single(engine.Live);
+    }
+
+    [Fact]
+    public async Task ApplyAsync_MissingExecutableDoesNotRollBackTheBatch()
+    {
+        var applier = Create(out var engine);
+        await applier.ApplyAsync([new EgressRule("existing", RemoteAddress: "203.0.113.1")]);
+
+        engine.NotApplicableWhen = plan => plan.RuleName == "uninstalled-app";
+
+        await applier.ApplyAsync([
+            new EgressRule("uninstalled-app", ProcessPath: @"C:\gone\missing.exe"),
+            new EgressRule("replacement", RemoteAddress: "203.0.113.2"),
+        ]);
+
+        // The swap completed: the old filter is retired and the new one is live.
+        var live = Assert.Single(engine.Live);
+        Assert.Equal("replacement", engine.Added.Last().RuleName);
+        Assert.Contains(live, engine.Live);
+    }
+
+    [Fact]
+    public void Dispose_ReleasesTheEngineSoSessionFiltersAreTornDown()
+    {
+        var applier = Create(out var engine);
+
+        applier.Dispose();
+
+        Assert.Equal(1, engine.DisposeCount);
     }
 
     [Fact]

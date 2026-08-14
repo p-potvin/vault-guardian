@@ -20,7 +20,7 @@ namespace VaultGuardian.Core.Firewall;
 /// never leaves a window with no policy in force.</item>
 /// </list>
 /// </summary>
-public sealed class WfpFirewallRuleApplier : IFirewallRuleApplier
+public sealed class WfpFirewallRuleApplier : IFirewallRuleApplier, IDisposable
 {
     private readonly IWfpEngine _engine;
     private readonly ILogger<WfpFirewallRuleApplier> _logger;
@@ -75,13 +75,25 @@ public sealed class WfpFirewallRuleApplier : IFirewallRuleApplier
             var previous = _installed.ToArray();
             var added = new List<InstalledFilter>(plan.Filters.Count);
 
+            var notApplicable = 0;
             try
             {
                 foreach (var filterPlan in plan.Filters)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    var id = _engine.AddFilter(filterPlan);
-                    added.Add(new InstalledFilter(id, filterPlan.Persistent, filterPlan.RuleName));
+
+                    try
+                    {
+                        var id = _engine.AddFilter(filterPlan);
+                        added.Add(new InstalledFilter(id, filterPlan.Persistent, filterPlan.RuleName));
+                    }
+                    catch (WfpFilterNotApplicableException ex)
+                    {
+                        // One unusable rule (typically an uninstalled executable)
+                        // must not stop every other rule from being enforced.
+                        notApplicable++;
+                        _logger.LogWarning("{Message}", ex.Message);
+                    }
                 }
             }
             catch
@@ -98,8 +110,8 @@ public sealed class WfpFirewallRuleApplier : IFirewallRuleApplier
             _installed.AddRange(added);
 
             _logger.LogInformation(
-                "Applied {FilterCount} WFP filter(s) from {RuleCount} rule(s); {SkipCount} skipped",
-                added.Count, ruleList.Count, plan.Skipped.Count);
+                "Applied {FilterCount} WFP filter(s) from {RuleCount} rule(s); {SkipCount} unexpressible, {NotApplicable} not applicable on this machine",
+                added.Count, ruleList.Count, plan.Skipped.Count, notApplicable);
         }
         finally
         {
@@ -162,5 +174,16 @@ public sealed class WfpFirewallRuleApplier : IFirewallRuleApplier
             _logger.LogWarning(ex,
                 "Failed to remove WFP filter {FilterId} for rule '{Rule}'", filter.Id, filter.RuleName);
         }
+    }
+
+    /// <summary>
+    /// Registered as a DI singleton, so this runs at container teardown. Closing
+    /// the engine is what releases the dynamic session and therefore every
+    /// session filter still in force.
+    /// </summary>
+    public void Dispose()
+    {
+        _engine.Dispose();
+        _lock.Dispose();
     }
 }

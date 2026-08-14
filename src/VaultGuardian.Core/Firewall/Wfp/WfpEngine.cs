@@ -208,6 +208,18 @@ public sealed class WfpEngine : IWfpEngine
         if (plan.AppPath is { } appPath)
         {
             var status = FwpmGetAppIdFromFileName0(appPath, out var appIdPtr);
+
+            // Resolving an app id requires the file to exist on disk. A rule that
+            // names an uninstalled program must not abort the whole batch — it is
+            // simply not expressible right now, and an absent program cannot
+            // originate traffic anyway.
+            if (status is ERROR_FILE_NOT_FOUND or ERROR_PATH_NOT_FOUND)
+            {
+                throw new WfpFilterNotApplicableException(
+                    plan.RuleName,
+                    $"Executable '{appPath}' was not found, so no application filter could be installed for rule '{plan.RuleName}'.");
+            }
+
             if (status != ERROR_SUCCESS) throw new WfpException($"{nameof(FwpmGetAppIdFromFileName0)}('{appPath}')", status);
             scope.TrackFwpmMemory(appIdPtr);
 
