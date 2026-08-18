@@ -7,7 +7,7 @@
     <Grid>
         <Grid.Background>
             <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                <GradientStop Color="#1A1230" Offset="0"/>
+                <GradientStop Color="#0A0C11" Offset="0"/>
                 <GradientStop Color="#0b0813" Offset="1"/>
             </LinearGradientBrush>
         </Grid.Background>
@@ -94,18 +94,18 @@
             <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0" Spacing="10">
                 <Button Content="Add Rule" Click="OnAddRuleClick"
                         Padding="18,10"
-                        Background="{StaticResource ConsoleGoldBrush}"
-                        Foreground="#1A1230" FontWeight="SemiBold"
+                        Background="{StaticResource IrisBrush}"
+                        Foreground="#0A0C11" FontWeight="SemiBold"
                         BorderThickness="0" CornerRadius="12"/>
                 <Button Content="Edit Selected" Click="OnEditRuleClick"
                         Padding="18,10"
-                        Background="{StaticResource ConsoleVioletBrush}"
-                        Foreground="#1A1230" FontWeight="SemiBold"
+                        Background="{StaticResource CoralBrush}"
+                        Foreground="#0A0C11" FontWeight="SemiBold"
                         BorderThickness="0" CornerRadius="12"/>
                 <Button Content="Remove Selected" Click="OnRemoveRuleClick"
                         Padding="18,10"
                         Background="{StaticResource SignalAlertBrush}"
-                        Foreground="#1A1230" FontWeight="SemiBold"
+                        Foreground="#0A0C11" FontWeight="SemiBold"
                         BorderThickness="0" CornerRadius="12"/>
             </StackPanel>
         </Grid>

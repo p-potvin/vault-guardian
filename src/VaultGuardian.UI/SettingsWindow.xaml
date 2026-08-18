@@ -6,7 +6,7 @@
     <Grid>
         <Grid.Background>
             <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                <GradientStop Color="#1A1230" Offset="0"/>
+                <GradientStop Color="#0A0C11" Offset="0"/>
                 <GradientStop Color="#0b0813" Offset="1"/>
             </LinearGradientBrush>
         </Grid.Background>
@@ -111,8 +111,8 @@
                         CornerRadius="12"/>
                 <Button Content="Save" Click="OnSaveClick"
                         Padding="18,10"
-                        Background="{StaticResource ConsoleGoldBrush}"
-                        Foreground="#1A1230" FontWeight="SemiBold"
+                        Background="{StaticResource IrisBrush}"
+                        Foreground="#0A0C11" FontWeight="SemiBold"
                         BorderThickness="0" CornerRadius="12"/>
             </StackPanel>
         </Grid>

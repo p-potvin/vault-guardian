@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace VaultGuardian.Core;
 
@@ -10,6 +11,10 @@ public static class AppSettingsLoader
     {
         PropertyNameCaseInsensitive = true,
         WriteIndented = true,
+        // Enum settings round-trip as readable names so settings.json stays
+        // hand-editable. Without this a typed value like "Wfp" fails to
+        // deserialize and Load() silently discards every other setting too.
+        Converters = { new JsonStringEnumConverter() },
     };
 
     private static string FilePath =>

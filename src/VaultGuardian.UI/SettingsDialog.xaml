@@ -22,7 +22,7 @@
                         Value="1000" ValueChanged="OnSliderChanged"/>
                 <TextBlock x:Name="RefreshValueText" Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center"
                            FontFamily="{StaticResource VaultMonoFontFamily}"
-                           Foreground="{StaticResource ConsoleGoldBrush}" Text="1000 ms"/>
+                           Foreground="{StaticResource IrisBrush}" Text="1000 ms"/>
             </Grid>
         </StackPanel>
 
